@@ -5,6 +5,7 @@ import { FileText, Plus, Search, MoreVertical, Hash, List, Type, Image as ImageI
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { askPawasAI } from '@/lib/gemini';
+import { marked } from 'marked';
 
 const NotesPage = () => {
   const [activeNote, setActiveNote] = useState<number | null>(null);
@@ -102,14 +103,16 @@ const NotesPage = () => {
     if (!aiPrompt.trim() || !activeNote) return;
     setIsGenerating(true);
     try {
-      const response = await askPawasAI(`Tolong buatkan isi catatan/artikel/materi yang sangat profesional dan rapi untuk topik: "${aiPrompt}". Gunakan paragraf, bullet points (<ul><li>), atau header (<h3>) HTML standar jika diperlukan agar tampilannya bagus. Jangan berikan balasan percakapan, cukup langsung teks materi utamanya saja tanpa backticks markdown.`);
+      const response = await askPawasAI(`Tolong buatkan materi/catatan untuk topik: "${aiPrompt}". Gunakan Markdown (tabel, list, bold, dsb) secara ekstensif dan terstruktur.`);
       
       const note = notes.find(n => n.id === activeNote);
       if (!note) return;
       
-      const cleanResponse = response.replace(/```html|```/g, '');
+      const cleanResponse = response.replace(/```markdown|```html|```/gi, '');
+      const htmlResponse = await marked.parse(cleanResponse); // Compile Markdown to raw HTML for contentEditable
+      
       const existingContent = note.content === 'Start writing your neural notes here...' ? '' : note.content + '<br/><br/>';
-      const newContent = `${existingContent}<h3>✨ AI Generated: ${aiPrompt}</h3><br/>${cleanResponse}`;
+      const newContent = `${existingContent}<h3>✨ AI Generated: ${aiPrompt}</h3><br/>${htmlResponse}`;
       
       updateNote(activeNote, { content: newContent });
       setAiPrompt('');
