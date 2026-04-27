@@ -48,7 +48,7 @@ const TradingPage = () => {
     }
   };
 
-  const container = {
+  const containerVariants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
@@ -56,14 +56,14 @@ const TradingPage = () => {
     }
   };
 
-  const item = {
+  const itemVariants = {
     hidden: { opacity: 0, y: 10 },
     show: { opacity: 1, y: 0 }
   };
 
   return (
     <motion.div 
-      variants={container}
+      variants={containerVariants}
       initial="hidden"
       animate="show"
       className="space-y-8 pb-20"
@@ -91,7 +91,7 @@ const TradingPage = () => {
       </header>
 
       {/* Performance Chart */}
-      <motion.div variants={item} className="glass-panel p-6 premium-shadow">
+      <motion.div variants={itemVariants} className="glass-panel p-6 premium-shadow">
         <div className="flex items-center justify-between mb-8">
           <div className="space-y-1">
             <h3 className="text-sm font-bold text-white">Equity Growth</h3>
@@ -159,7 +159,7 @@ const TradingPage = () => {
           { label: 'Max Drawdown', val: '4.2%', icon: <ArrowDownRight size={14} />, color: 'text-red-400' },
           { label: 'Avg Trade', val: '+24 Pips', icon: <BarChart2 size={14} />, color: 'text-blue-400' },
         ].map((stat, idx) => (
-          <motion.div key={idx} variants={item} className="glass-panel p-4 flex flex-col gap-2">
+          <motion.div key={idx} variants={itemVariants} className="glass-panel p-4 flex flex-col gap-2">
             <div className="flex items-center gap-2 text-zinc-500">
               {stat.icon}
               <span className="text-[10px] font-bold uppercase tracking-wider">{stat.label}</span>
@@ -187,7 +187,7 @@ const TradingPage = () => {
                 const isProfit = trade.result.startsWith('+');
                 return (
                   <motion.div
-                    variants={item}
+                    variants={itemVariants}
                     initial="hidden"
                     animate="show"
                     exit={{ opacity: 0, scale: 0.95 }}

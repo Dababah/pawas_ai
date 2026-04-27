@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 
 const Dashboard = () => {
-  const container = {
+  const containerVariants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
@@ -16,35 +16,35 @@ const Dashboard = () => {
     }
   };
 
-  const item = {
+  const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0 }
   };
 
   return (
     <motion.div 
-      variants={container}
+      variants={containerVariants}
       initial="hidden"
       animate="show"
       className="space-y-10 pb-10"
     >
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
-          <motion.div variants={item} className="flex items-center gap-2 text-zinc-500 text-[10px] font-bold uppercase tracking-[0.3em]">
+          <motion.div variants={itemVariants} className="flex items-center gap-2 text-zinc-500 text-[10px] font-bold uppercase tracking-[0.3em]">
             <Sparkles size={12} className="text-white/40" />
             <span>Neural Dashboard</span>
             <span className="text-zinc-800">/</span>
             <span className="text-white">Overview</span>
           </motion.div>
-          <motion.h1 variants={item} className="text-4xl md:text-5xl font-black text-white tracking-tight font-outfit">
+          <motion.h1 variants={itemVariants} className="text-4xl md:text-5xl font-black text-white tracking-tight font-outfit">
             Halo, <span className="text-zinc-500">Fawwaz</span>
           </motion.h1>
-          <motion.p variants={item} className="text-zinc-400 text-sm md:text-base max-w-md leading-relaxed">
+          <motion.p variants={itemVariants} className="text-zinc-400 text-sm md:text-base max-w-md leading-relaxed">
             Sistem asisten neural Anda siap membantu mengelola workspace, trading, dan bisnis.
           </motion.p>
         </div>
         
-        <motion.div variants={item} className="hidden lg:flex items-center gap-3">
+        <motion.div variants={itemVariants} className="hidden lg:flex items-center gap-3">
           <div className="flex -space-x-2">
             {[1, 2, 3].map((i) => (
               <div key={i} className="w-8 h-8 rounded-full border-2 border-black bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-400 overflow-hidden">
@@ -60,7 +60,7 @@ const Dashboard = () => {
         {/* Main Content Area */}
         <div className="lg:col-span-2 space-y-8">
           <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <motion.div variants={item}>
+            <motion.div variants={itemVariants}>
               <Link href="/notes" className="group block p-6 glass-card relative overflow-hidden h-full">
                 <div className="absolute top-0 right-0 p-6">
                   <ArrowUpRight size={20} className="text-zinc-700 group-hover:text-white transition-all transform group-hover:translate-x-1 group-hover:-translate-y-1" />
@@ -77,7 +77,7 @@ const Dashboard = () => {
               </Link>
             </motion.div>
 
-            <motion.div variants={item}>
+            <motion.div variants={itemVariants}>
               <Link href="/trading" className="group block p-6 glass-card relative overflow-hidden h-full">
                 <div className="absolute top-0 right-0 p-6">
                   <ArrowUpRight size={20} className="text-zinc-700 group-hover:text-white transition-all transform group-hover:translate-x-1 group-hover:-translate-y-1" />
@@ -96,7 +96,7 @@ const Dashboard = () => {
           </section>
 
           <section className="space-y-4">
-            <motion.div variants={item} className="flex items-center justify-between px-1">
+            <motion.div variants={itemVariants} className="flex items-center justify-between px-1">
               <h2 className="text-xs font-bold text-zinc-500 uppercase tracking-[0.2em] flex items-center gap-2">
                 <Activity size={14} /> Core Pawas Metrics
               </h2>
@@ -109,7 +109,7 @@ const Dashboard = () => {
                 { label: 'Win Rate', val: '68%', sub: 'Last 20 Trades', color: 'text-blue-400' },
                 { label: 'GPA Target', val: '3.85', sub: 'Current: 3.78', color: 'text-purple-400' },
               ].map((stat, idx) => (
-                <motion.div key={idx} variants={item} className="p-5 glass-panel group hover:border-white/20 transition-all">
+                <motion.div key={idx} variants={itemVariants} className="p-5 glass-panel group hover:border-white/20 transition-all">
                   <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-2">{stat.label}</p>
                   <p className={`text-xl font-bold ${stat.color} mb-1 font-outfit`}>{stat.val}</p>
                   <p className="text-[10px] text-zinc-600">{stat.sub}</p>
@@ -122,14 +122,14 @@ const Dashboard = () => {
         {/* Sidebar Status Area */}
         <div className="space-y-8">
           <section className="space-y-4">
-            <motion.div variants={item} className="flex items-center justify-between px-1">
+            <motion.div variants={itemVariants} className="flex items-center justify-between px-1">
               <h2 className="text-xs font-bold text-zinc-500 uppercase tracking-[0.2em] flex items-center gap-2">
                 <Clock size={14} /> Deadlines
               </h2>
               <button className="text-[10px] text-zinc-600 hover:text-white transition-colors uppercase font-bold tracking-widest">View All</button>
             </motion.div>
             
-            <motion.div variants={item} className="glass-panel p-5 space-y-4 relative overflow-hidden group">
+            <motion.div variants={itemVariants} className="glass-panel p-5 space-y-4 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/5 rounded-full -mr-12 -mt-12 blur-2xl group-hover:bg-orange-500/10 transition-all" />
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-400 shrink-0">
@@ -149,7 +149,7 @@ const Dashboard = () => {
               </div>
             </motion.div>
 
-            <motion.div variants={item} className="glass-panel p-5 space-y-4">
+            <motion.div variants={itemVariants} className="glass-panel p-5 space-y-4">
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-400 shrink-0">
                   <Target size={20} />

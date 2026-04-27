@@ -13,7 +13,7 @@ const NotesPage = () => {
     { id: 3, title: 'Trading Strategy: SMC M15', icon: '📉', category: 'Trading', content: 'Focus on Liquidity Grab and Break of Market Structure (BMS). Using M15 for bias and M1 for refined entries. Risk management remains the top priority with a strict 1:3 RR ratio on every execution.' },
   ];
 
-  const container = {
+  const containerVariants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
@@ -21,7 +21,7 @@ const NotesPage = () => {
     }
   };
 
-  const item = {
+  const itemVariants = {
     hidden: { opacity: 0, y: 10 },
     show: { opacity: 1, y: 0 }
   };
@@ -32,7 +32,7 @@ const NotesPage = () => {
         {!activeNote ? (
           <motion.div 
             key="list"
-            variants={container}
+            variants={containerVariants}
             initial="hidden"
             animate="show"
             exit={{ opacity: 0, x: -20 }}
@@ -53,7 +53,7 @@ const NotesPage = () => {
               </button>
             </header>
 
-            <motion.div variants={item} className="relative group">
+            <motion.div variants={itemVariants} className="relative group">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-white transition-colors" size={18} />
               <input 
                 type="text" 
@@ -72,7 +72,7 @@ const NotesPage = () => {
                   {notes.map((note) => (
                     <motion.button
                       key={note.id}
-                      variants={item}
+                      variants={itemVariants}
                       onClick={() => setActiveNote(note.id)}
                       className="w-full glass-panel p-5 flex items-center justify-between group hover:border-white/10 transition-all"
                     >
@@ -107,7 +107,7 @@ const NotesPage = () => {
                     { label: 'Cloud Sync', icon: <Clock className="text-emerald-500" />, sub: 'Real-time backup' },
                     { label: 'Neural AI', icon: <Sparkles className="text-orange-500" />, sub: 'Auto completion' },
                   ].map((sys, idx) => (
-                    <motion.div key={idx} variants={item} className="p-5 glass-panel group hover:bg-white/[0.02] cursor-pointer transition-all">
+                    <motion.div key={idx} variants={itemVariants} className="p-5 glass-panel group hover:bg-white/[0.02] cursor-pointer transition-all">
                       <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                         {sys.icon}
                       </div>

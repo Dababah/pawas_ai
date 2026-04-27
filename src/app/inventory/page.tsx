@@ -59,7 +59,7 @@ const InventoryPage = () => {
     doc.save(`Laporan_Inventaris_PawasAI_${new Date().toISOString().slice(0,10)}.pdf`);
   };
 
-  const container = {
+  const containerVariants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
@@ -67,14 +67,14 @@ const InventoryPage = () => {
     }
   };
 
-  const item = {
+  const itemVariants = {
     hidden: { opacity: 0, y: 10 },
     show: { opacity: 1, y: 0 }
   };
 
   return (
     <motion.div 
-      variants={container}
+      variants={containerVariants}
       initial="hidden"
       animate="show"
       className="space-y-8 pb-20"
@@ -119,7 +119,7 @@ const InventoryPage = () => {
           { label: 'Avg Margin', val: 'Rp 850K', sub: 'Per Unit', icon: <Activity size={14} />, color: 'text-blue-400' },
           { label: 'Ready Stock', val: stock.filter(s => s.status === 'ready').length, sub: 'Units', icon: <Smartphone size={14} />, color: 'text-purple-400' },
         ].map((stat, idx) => (
-          <motion.div key={idx} variants={item} className="glass-panel p-4 flex flex-col gap-2">
+          <motion.div key={idx} variants={itemVariants} className="glass-panel p-4 flex flex-col gap-2">
             <div className="flex items-center gap-2 text-zinc-500">
               {stat.icon}
               <span className="text-[10px] font-bold uppercase tracking-wider">{stat.label}</span>
@@ -152,7 +152,7 @@ const InventoryPage = () => {
             <AnimatePresence mode="popLayout">
               {stock.map((item, i) => (
                 <motion.div
-                  variants={item}
+                  variants={itemVariants}
                   initial="hidden"
                   animate="show"
                   exit={{ opacity: 0, scale: 0.95 }}
