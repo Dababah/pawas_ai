@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { askPawasAI } from '@/lib/gemini';
 import { supabase } from '@/lib/supabase';
 import { scheduleTaskNotification } from '@/lib/notifications';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const AssistantPage = () => {
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; text: string; image?: string }[]>([]);
@@ -199,7 +201,11 @@ const AssistantPage = () => {
                 {msg.image && (
                   <img src={msg.image} alt="Upload" className="rounded-xl w-full max-h-60 object-cover border border-white/5 mb-2" />
                 )}
-                <p className="text-sm leading-relaxed text-zinc-300">{msg.text}</p>
+                <div className="text-sm leading-relaxed text-zinc-300 custom-html-content">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {msg.text}
+                  </ReactMarkdown>
+                </div>
               </div>
             </motion.div>
           ))}
