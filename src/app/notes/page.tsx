@@ -14,14 +14,8 @@ const NotesPage = () => {
   const fetchNotes = async () => {
     setLoading(true);
     const { data, error } = await supabase.from('notes').select('*').order('id', { ascending: false });
-    if (data && data.length > 0) {
+    if (data) {
       setNotes(data);
-    } else {
-      setNotes([
-        { id: 1, title: 'IT Study: RSA Algorithm', icon: '🎓', category: 'Kuliah', content: 'RSA is an asymmetric cryptography algorithm...' },
-        { id: 2, title: 'Business Plan: Core Pawas', icon: '🚀', category: 'Bisnis', content: 'Expanding to high-end gadgets market...' },
-        { id: 3, title: 'Trading Strategy', icon: '📉', category: 'Trading', content: 'Focus on Liquidity Grab and Break of Market Structure.' },
-      ]);
     }
     setLoading(false);
   };

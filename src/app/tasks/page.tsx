@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Clock, CheckCircle2, Circle, AlertCircle, Plus, Calendar, Filter, ArrowLeft } from 'lucide-react';
+import { Clock, CheckCircle2, Circle, AlertCircle, Plus, Calendar, Filter, ArrowLeft, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
@@ -25,14 +25,6 @@ const TasksPage = () => {
       .order('deadline', { ascending: true });
     
     if (data) setTasks(data);
-    else {
-      // Mock data if table doesn't exist or empty
-      setTasks([
-        { id: 1, title: 'Tugas Kriptografi', matkul: 'Kriptografi', deadline: '2026-04-28T23:59:59', status: 'pending' },
-        { id: 2, title: 'Meeting Supplier', matkul: 'Business', deadline: '2026-04-29T09:00:00', status: 'pending' },
-        { id: 3, title: 'Laporan Trading Mingguan', matkul: 'Trading', deadline: '2026-04-30T17:00:00', status: 'completed' },
-      ]);
-    }
     setLoading(false);
   };
 
@@ -45,6 +37,13 @@ const TasksPage = () => {
     const { error } = await supabase.from('tasks').update({ status: newStatus }).eq('id', id);
     if (!error) {
       setTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
+    }
+  };
+
+  const deleteTask = async (id: number) => {
+    if (confirm('Hapus deadline ini permanen?')) {
+      await supabase.from('tasks').delete().eq('id', id);
+      setTasks(prev => prev.filter(t => t.id !== id));
     }
   };
 
@@ -117,12 +116,23 @@ const TasksPage = () => {
               </div>
             </div>
 
-            {task.status !== 'completed' && (
-              <div className="flex items-center gap-2 text-[#6b4e3d]">
-                <AlertCircle size={14} />
-                <span className="text-[10px] font-bold uppercase tracking-tighter">Due Soon</span>
-              </div>
-            )}
+            <div className="flex items-center gap-3">
+              {task.status !== 'completed' && (
+                <div className="hidden sm:flex items-center gap-2 text-[#6b4e3d] mr-2">
+                  <AlertCircle size={14} />
+                  <span className="text-[10px] font-bold uppercase tracking-tighter">Due Soon</span>
+                </div>
+              )}
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteTask(task.id);
+                }}
+                className="p-2 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
           </motion.div>
         ))}
       </div>

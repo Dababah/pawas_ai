@@ -28,51 +28,61 @@ export async function askPawasAI(input: string, history: any[] = [], imageBase64
     const chatHistory = history.map(h => `${h.role === 'user' ? 'User' : 'Assistant'}: ${h.parts[0].text}`).join('\n');
     const fullPrompt = `${systemPrompt}\n\nRiwayat Percakapan:\n${chatHistory}\n\nUser: ${input}\n\nAssistant:`;
 
-    const modelUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${API_KEY}`;
-    
-    let contents: any[] = [{
-      role: "user",
-      parts: [{ text: fullPrompt }]
-    }];
+    const modelsToTry = [
+      'gemini-3.1-flash-lite-preview',
+      'gemini-3.1-pro-preview',
+      'gemini-3-flash-preview',
+      'gemini-2.5-flash-lite'
+    ];
 
-    if (imageBase64) {
-      const match = imageBase64.match(/^data:(.*);base64,(.*)$/);
-      if (!match) throw new Error("Invalid image format");
-      contents[0].parts.push({
-        inlineData: {
-          mimeType: match[1],
-          data: match[2]
-        }
-      });
-    }
+    let lastError = null;
 
-    const response = await fetch(modelUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents })
-    });
+    for (const modelName of modelsToTry) {
+      const modelUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${API_KEY}`;
+      
+      let contents: any[] = [{
+        role: "user",
+        parts: [{ text: fullPrompt }]
+      }];
 
-    const data = await response.json();
+      if (imageBase64) {
+        const match = imageBase64.match(/^data:(.*);base64,(.*)$/);
+        if (!match) throw new Error("Invalid image format");
+        contents[0].parts.push({
+          inlineData: {
+            mimeType: match[1],
+            data: match[2]
+          }
+        });
+      }
 
-    if (!response.ok) {
-      // Fallback to pro if flash fails
-      if (response.status === 404) {
-        const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=${API_KEY}`;
-        const fallbackResponse = await fetch(fallbackUrl, {
+      try {
+        const response = await fetch(modelUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: fullPrompt }] }] }) // No images for pro fallback
+          body: JSON.stringify({ contents })
         });
-        const fallbackData = await fallbackResponse.json();
-        if (!fallbackResponse.ok) {
-          throw new Error(fallbackData.error?.message || "Fallback model also failed.");
+
+        const data = await response.json();
+
+        if (response.ok) {
+          return data.candidates?.[0]?.content?.parts?.[0]?.text || "AI memberikan respons kosong.";
+        } else {
+          lastError = new Error(data.error?.message || `HTTP Error ${response.status}`);
+          // If it's 404 (not found) or 503 (overloaded), continue to the next model
+          if (response.status === 404 || response.status === 503 || data.error?.message?.includes('high demand')) {
+            console.warn(`Model ${modelName} failed, trying next...`);
+            continue;
+          } else {
+            throw lastError; // Throw other errors (like invalid key) immediately
+          }
         }
-        return fallbackData.candidates?.[0]?.content?.parts?.[0]?.text || "AI memberikan respons kosong.";
+      } catch (err: any) {
+        lastError = err;
       }
-      throw new Error(data.error?.message || `HTTP Error ${response.status}`);
     }
 
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || "AI memberikan respons kosong.";
+    throw lastError || new Error("Semua model AI sedang sibuk atau tidak tersedia.");
   } catch (error: any) {
     console.error("Gemini Fetch API Error:", error);
     throw new Error(error?.message || "Koneksi ke AI gagal");
