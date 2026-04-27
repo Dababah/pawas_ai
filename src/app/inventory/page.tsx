@@ -73,7 +73,10 @@ const InventoryPage = () => {
           <button onClick={fetchInventory} className="p-2 bg-zinc-800 border border-zinc-700 rounded-xl text-zinc-400">
             <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
           </button>
-          <button className="p-2 bg-zinc-800 border border-zinc-700 rounded-xl text-zinc-400 hover:text-white">
+          <button 
+            onClick={() => window.location.href = '/assistant'} 
+            className="p-2 bg-white text-black rounded-xl hover:bg-zinc-200 transition-all"
+          >
             <Plus size={18} />
           </button>
         </div>
