@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 import SplashScreen from "@/components/SplashScreen";
+import AuthWrapper from "@/components/AuthWrapper";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -19,11 +20,13 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${inter.variable} antialiased pb-24`}>
-        <SplashScreen />
-        <main className="min-h-screen px-4 pt-8 max-w-lg mx-auto">
-          {children}
-        </main>
-        <BottomNav />
+        <AuthWrapper>
+          <SplashScreen />
+          <main className="min-h-screen px-4 pt-8 max-w-lg mx-auto">
+            {children}
+          </main>
+          <BottomNav />
+        </AuthWrapper>
       </body>
     </html>
   );
