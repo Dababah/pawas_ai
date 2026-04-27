@@ -91,28 +91,35 @@ const AssistantPage = () => {
       triggerHaptic([10, 5, 10]);
       
       if (response.includes('<action>')) {
-        const actionMatch = response.match(/<action>([\s\S]*?)<\/action>/);
+        const actionMatch = response.match(/<action>([\s\S]*?)<\/action>/i);
         if (actionMatch) {
           try {
-            // Remove markdown code blocks if AI added them inside the tag
             const cleanJsonString = actionMatch[1].replace(/```json/g, '').replace(/```/g, '').trim();
-            const { action, data } = JSON.parse(cleanJsonString);
+            const parsedJson = JSON.parse(cleanJsonString);
+            const actionType = (parsedJson.action || '').toLowerCase();
+            const data = parsedJson.data || parsedJson; // Fallback if AI puts data directly at root
             
-            if (action === 'save_task') {
+            if (actionType === 'save_task' || actionType === 'add_task') {
               await supabase.from('tasks').insert([{...data, status: 'pending'}]);
               if (data.deadline) await scheduleTaskNotification(data.title, data.deadline);
             }
-            else if (action === 'save_inventory') {
+            else if (actionType === 'save_inventory' || actionType === 'add_inventory') {
               await supabase.from('inventory').insert([{...data, status: 'ready'}]);
             }
-            else if (action === 'log_biz_sale') {
-              await supabase.from('sales').insert([data]);
-            }
-            else if (action === 'log_trade') {
+            else if (actionType === 'log_trade' || actionType === 'save_trade') {
               await supabase.from('trades').insert([data]);
             }
-            else if (action === 'save_note') {
-              await supabase.from('notes').insert([data]);
+            else if (actionType === 'save_note' || actionType === 'update_notes') {
+              const noteTitle = data.title || parsedJson.title || 'AI Generated Note';
+              const noteCategory = data.category || parsedJson.category || 'Personal';
+              const noteContent = data.content || cleanText; // If AI forgets content in JSON, use the chat text!
+              
+              await supabase.from('notes').insert([{
+                title: noteTitle,
+                category: noteCategory,
+                content: noteContent,
+                icon: '🧠'
+              }]);
             }
           } catch (e) {
             console.error('Database action failed or Invalid JSON', e);
