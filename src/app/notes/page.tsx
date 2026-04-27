@@ -7,11 +7,24 @@ import { motion, AnimatePresence } from 'framer-motion';
 const NotesPage = () => {
   const [activeNote, setActiveNote] = useState<number | null>(null);
   
-  const notes = [
+  const [notes, setNotes] = useState([
     { id: 1, title: 'IT Study: RSA Algorithm', icon: '🎓', category: 'Kuliah', content: 'RSA is an asymmetric cryptography algorithm that is widely used for secure data transmission. It is based on the mathematical difficulty of factoring the product of two large prime numbers. The security of RSA relies on the fact that while it is easy to multiply two large prime numbers together, it is extremely difficult to reverse the process...' },
     { id: 2, title: 'Business Plan: Core Pawas 2026', icon: '🚀', category: 'Bisnis', content: 'Expanding to high-end gadgets market in Southeast Asia. Our core value proposition remains transparency and premium service. Key milestones include opening a flagship experience center and integrating AI-driven inventory management.' },
     { id: 3, title: 'Trading Strategy: SMC M15', icon: '📉', category: 'Trading', content: 'Focus on Liquidity Grab and Break of Market Structure (BMS). Using M15 for bias and M1 for refined entries. Risk management remains the top priority with a strict 1:3 RR ratio on every execution.' },
-  ];
+  ]);
+
+  const addNewNote = () => {
+    const newId = notes.length + 1;
+    const newNote = {
+      id: newId,
+      title: 'Untitled Note',
+      icon: '📝',
+      category: 'General',
+      content: 'Start writing your neural notes here...'
+    };
+    setNotes([newNote, ...notes]);
+    setActiveNote(newId);
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -47,7 +60,10 @@ const NotesPage = () => {
                 <h1 className="text-3xl md:text-4xl font-black text-white font-outfit">Knowledge Base</h1>
               </div>
               
-              <button className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-black rounded-xl text-sm font-bold hover:bg-zinc-200 transition-all shadow-lg shadow-white/5 group">
+              <button 
+                onClick={addNewNote}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#f0ede4] text-[#0d1a15] rounded-xl text-sm font-bold hover:bg-[#8c7851] hover:text-[#f0ede4] transition-all shadow-lg shadow-white/5 group"
+              >
                 <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" />
                 <span>New Page</span>
               </button>

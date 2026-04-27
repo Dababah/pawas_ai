@@ -12,8 +12,8 @@ const Sidebar = () => {
   const menuItems = [
     { icon: Home, label: 'Dashboard', path: '/' },
     { icon: FileText, label: 'Workspace', path: '/notes' },
+    { icon: Clock, label: 'Deadlines', path: '/tasks' },
     { icon: TrendingUp, label: 'Trading', path: '/trading' },
-    { icon: Globe, label: 'Web Apps', path: '/web' },
     { icon: MessageSquare, label: 'AI Assistant', path: '/assistant' },
   ];
 

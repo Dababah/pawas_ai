@@ -24,30 +24,42 @@ Selalu berikan respons teks yang ramah, namun sertakan objek JSON di akhir setia
 `;
 
 export async function askPawasAI(input: string, history: any[] = [], imageBase64?: string) {
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-  
-  if (imageBase64) {
-    const prompt = `${systemPrompt}\n\nUser Input: ${input}\nAnalisis gambar yang dilampirkan.`;
-    const imageParts = [{
-      inlineData: {
-        data: imageBase64.split(',')[1],
-        mimeType: "image/jpeg"
-      }
-    }];
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     
-    const result = await model.generateContent([prompt, ...imageParts]);
-    return result.response.text();
+    if (imageBase64) {
+      // Extract mimeType and base64 data correctly
+      const match = imageBase64.match(/^data:(.*);base64,(.*)$/);
+      if (!match) throw new Error("Invalid image format");
+      
+      const mimeType = match[1];
+      const data = match[2];
+
+      const prompt = `${systemPrompt}\n\nUser Input: ${input}\nAnalisis gambar yang dilampirkan.`;
+      const imageParts = [{
+        inlineData: {
+          data: data,
+          mimeType: mimeType
+        }
+      }];
+      
+      const result = await model.generateContent([prompt, ...imageParts]);
+      return result.response.text();
+    }
+
+    const chat = model.startChat({
+      history: [
+        { role: "user", parts: [{ text: systemPrompt }] },
+        { role: "model", parts: [{ text: "Siap, saya Pawas.ai. Bagaimana saya bisa membantu Anda hari ini?" }] },
+        ...history
+      ],
+    });
+
+    const result = await chat.sendMessage(input);
+    const response = await result.response;
+    return response.text();
+  } catch (error: any) {
+    console.error("Gemini API Error:", error);
+    throw new Error(error?.message || "Koneksi ke AI gagal");
   }
-
-  const chat = model.startChat({
-    history: [
-      { role: "user", parts: [{ text: systemPrompt }] },
-      { role: "model", parts: [{ text: "Siap, saya Pawas.ai. Bagaimana saya bisa membantu Anda hari ini?" }] },
-      ...history
-    ],
-  });
-
-  const result = await chat.sendMessage(input);
-  const response = await result.response;
-  return response.text();
 }

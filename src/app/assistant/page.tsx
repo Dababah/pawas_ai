@@ -100,8 +100,11 @@ const AssistantPage = () => {
           }
         }
       }
-    } catch (error) {
-      setMessages(prev => [...prev, { role: 'assistant', text: 'Maaf, koneksi neural terputus.' }]);
+    } catch (error: any) {
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        text: `Maaf Fawwaz, koneksi neural terganggu (${error.message}). Coba kirim pesan lagi atau periksa kuota API Gemini Anda.` 
+      }]);
     } finally {
       setIsLoading(false);
     }
