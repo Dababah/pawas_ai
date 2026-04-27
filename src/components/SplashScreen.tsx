@@ -17,7 +17,7 @@ const SplashScreen = () => {
         <motion.div
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center"
+          className="fixed inset-0 z-[100] bg-[#0d1a15] flex flex-col items-center justify-center"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
@@ -25,11 +25,11 @@ const SplashScreen = () => {
             transition={{ duration: 1, ease: "easeOut" }}
             className="flex flex-col items-center gap-4"
           >
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-emerald-400 to-blue-600 flex items-center justify-center">
-              <span className="text-3xl font-black text-black">P</span>
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#4a6741] to-[#8c7851] flex items-center justify-center shadow-2xl shadow-[#4a6741]/20">
+              <span className="text-3xl font-black text-[#0d1a15]">P</span>
             </div>
-            <h1 className="text-2xl font-bold tracking-widest text-white">PAWAS.AI</h1>
-            <p className="text-xs text-zinc-500 uppercase tracking-widest">Neural Assistant</p>
+            <h1 className="text-2xl font-bold tracking-widest text-[#f0ede4]">PAWAS.AI</h1>
+            <p className="text-xs text-[#8c7851] uppercase tracking-widest font-bold">Neural Assistant</p>
           </motion.div>
         </motion.div>
       )}

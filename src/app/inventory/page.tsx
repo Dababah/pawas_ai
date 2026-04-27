@@ -81,30 +81,30 @@ const InventoryPage = () => {
     >
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-zinc-500 text-[10px] font-bold uppercase tracking-[0.3em]">
-            <Package size={12} className="text-purple-500" />
+          <div className="flex items-center gap-2 text-[#8c7851]/60 text-[10px] font-bold uppercase tracking-[0.3em]">
+            <Package size={12} className="text-[#4a6741]" />
             <span>Business Assets</span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-black text-white font-outfit tracking-tight">Core Inventory</h1>
+          <h1 className="text-3xl md:text-4xl font-black text-[#f0ede4] font-outfit tracking-tight">Core Inventory</h1>
         </div>
         
         <div className="flex items-center gap-2">
           <button 
             onClick={exportToPDF} 
-            className="flex items-center gap-2 px-4 py-2.5 bg-zinc-900 border border-white/5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all shadow-xl"
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#1a2e26] border border-white/5 rounded-xl text-xs font-bold text-[#8c7851]/80 hover:text-[#f0ede4] transition-all shadow-xl"
           >
             <FileDown size={16} />
             <span className="hidden sm:inline">Export PDF</span>
           </button>
           <button 
             onClick={fetchInventory} 
-            className="p-2.5 bg-zinc-900 border border-white/5 rounded-xl text-zinc-400 hover:text-white transition-all shadow-xl"
+            className="p-2.5 bg-[#1a2e26] border border-white/5 rounded-xl text-[#8c7851]/80 hover:text-[#f0ede4] transition-all shadow-xl"
           >
             <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
           </button>
           <button 
             onClick={() => window.location.href = '/assistant'} 
-            className="flex items-center gap-2 px-5 py-2.5 bg-white text-black rounded-xl text-sm font-bold hover:bg-zinc-200 transition-all shadow-xl"
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#f0ede4] text-[#0d1a15] rounded-xl text-sm font-bold hover:bg-[#8c7851] hover:text-[#f0ede4] transition-all shadow-xl"
           >
             <Plus size={18} />
             <span>Add Unit</span>
@@ -114,31 +114,31 @@ const InventoryPage = () => {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total Units', val: stock.length, sub: 'In Warehouse', icon: <Package size={14} />, color: 'text-white' },
-          { label: 'Est. Revenue', val: `Rp ${(stock.reduce((acc, i) => acc + i.sell_price, 0) / 1000000).toFixed(1)}M`, sub: 'Projected', icon: <DollarSign size={14} />, color: 'text-emerald-400' },
-          { label: 'Avg Margin', val: 'Rp 850K', sub: 'Per Unit', icon: <Activity size={14} />, color: 'text-blue-400' },
-          { label: 'Ready Stock', val: stock.filter(s => s.status === 'ready').length, sub: 'Units', icon: <Smartphone size={14} />, color: 'text-purple-400' },
+          { label: 'Total Units', val: stock.length, sub: 'In Warehouse', icon: <Package size={14} />, color: 'text-[#f0ede4]' },
+          { label: 'Est. Revenue', val: `Rp ${(stock.reduce((acc, i) => acc + i.sell_price, 0) / 1000000).toFixed(1)}M`, sub: 'Projected', icon: <DollarSign size={14} />, color: 'text-[#4a6741]' },
+          { label: 'Avg Margin', val: 'Rp 850K', sub: 'Per Unit', icon: <Activity size={14} />, color: 'text-[#8c7851]' },
+          { label: 'Ready Stock', val: stock.filter(s => s.status === 'ready').length, sub: 'Units', icon: <Smartphone size={14} />, color: 'text-[#6b4e3d]' },
         ].map((stat, idx) => (
           <motion.div key={idx} variants={itemVariants} className="glass-panel p-4 flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-zinc-500">
+            <div className="flex items-center gap-2 text-[#8c7851]/60">
               {stat.icon}
               <span className="text-[10px] font-bold uppercase tracking-wider">{stat.label}</span>
             </div>
             <p className={`text-xl font-bold ${stat.color} font-outfit`}>{stat.val}</p>
-            <p className="text-[9px] text-zinc-600 font-bold uppercase">{stat.sub}</p>
+            <p className="text-[9px] text-[#8c7851]/40 font-bold uppercase">{stat.sub}</p>
           </motion.div>
         ))}
       </div>
 
       <div className="space-y-4">
         <div className="flex items-center justify-between px-1">
-          <h2 className="text-xs font-bold text-zinc-500 uppercase tracking-[0.2em]">Inventory Log</h2>
+          <h2 className="text-xs font-bold text-[#8c7851]/60 uppercase tracking-[0.2em]">Inventory Log</h2>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 mr-4">
-              <div className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span className="text-[9px] text-zinc-500 font-bold uppercase">Ready</span>
+              <div className="w-2 h-2 rounded-full bg-[#4a6741]" />
+              <span className="text-[9px] text-[#4a6741] font-bold uppercase">Ready</span>
             </div>
-            <span className="text-[10px] text-zinc-600 font-bold uppercase">{stock.length} Total Units</span>
+            <span className="text-[10px] text-[#8c7851]/40 font-bold uppercase">{stock.length} Total Units</span>
           </div>
         </div>
 
