@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Package, Plus, Smartphone, Trash2, RefreshCw } from 'lucide-react';
+import { Package, Plus, Smartphone, Trash2, RefreshCw, FileDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, Inventory } from '@/lib/supabase';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const InventoryPage = () => {
   const [stock, setStock] = useState<Inventory[]>([]);
@@ -31,6 +33,32 @@ const InventoryPage = () => {
     }
   };
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text('Laporan Inventaris Core Pawas', 14, 22);
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Dicetak pada: ${new Date().toLocaleString()}`, 14, 30);
+
+    const tableData = stock.map(item => [
+      item.unit,
+      item.buy_price.toLocaleString('id-ID'),
+      item.sell_price.toLocaleString('id-ID'),
+      item.status.toUpperCase()
+    ]);
+
+    (doc as any).autoTable({
+      startY: 40,
+      head: [['Unit Gadget', 'Harga Beli (Rp)', 'Harga Jual (Rp)', 'Status']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [16, 185, 129] }
+    });
+
+    doc.save(`Laporan_Inventaris_PawasAI_${new Date().toISOString().slice(0,10)}.pdf`);
+  };
+
   return (
     <div className="space-y-6">
       <header className="flex justify-between items-center mb-6">
@@ -39,6 +67,9 @@ const InventoryPage = () => {
           <h1 className="text-xl font-bold text-white">Core Pawas Inventory</h1>
         </div>
         <div className="flex gap-2">
+          <button onClick={exportToPDF} className="p-2 bg-zinc-800 border border-zinc-700 rounded-xl text-emerald-400">
+            <FileDown size={18} />
+          </button>
           <button onClick={fetchInventory} className="p-2 bg-zinc-800 border border-zinc-700 rounded-xl text-zinc-400">
             <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
           </button>
