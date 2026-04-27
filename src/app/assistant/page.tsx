@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Mic, Send, Bot, User, Sparkles, Loader2, Volume2, VolumeX, Image as ImageIcon, X, Command } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { askPawasAI } from '@/lib/gemini';
-import { supabase } from '@/lib/supabase';
+import { supabase, bizSupabase } from '@/lib/supabase';
 import { scheduleTaskNotification } from '@/lib/notifications';
 
 const AssistantPage = () => {
