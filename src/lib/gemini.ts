@@ -25,9 +25,15 @@ Selalu berikan respons teks yang ramah, namun sertakan objek JSON di akhir setia
 
 export async function askPawasAI(input: string, history: any[] = [], imageBase64?: string) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // Try Flash Latest first, then Pro with explicit models/ prefix
+    let model;
+    try {
+      model = genAI.getGenerativeModel({ model: "models/gemini-1.5-flash-latest" });
+    } catch (e) {
+      model = genAI.getGenerativeModel({ model: "models/gemini-pro" });
+    }
     
-    // Combine history and current input into a single prompt for better reliability
+    // Combine history and current input into a single prompt
     const chatHistory = history.map(h => `${h.role === 'user' ? 'User' : 'Assistant'}: ${h.parts[0].text}`).join('\n');
     const fullPrompt = `${systemPrompt}\n\nRiwayat Percakapan:\n${chatHistory}\n\nUser: ${input}\n\nAssistant:`;
 
@@ -54,14 +60,15 @@ export async function askPawasAI(input: string, history: any[] = [], imageBase64
     return response.text();
   } catch (error: any) {
     console.error("Gemini API Error Detail:", error);
-    // If Flash fails, try the older Pro model as absolute last resort
+    
+    // Last ditch effort: try models/gemini-1.0-pro
     if (error.message?.includes('not found') || error.message?.includes('404')) {
        try {
-         const proModel = genAI.getGenerativeModel({ model: "gemini-pro" });
-         const result = await proModel.generateContent(input);
+         const lastResortModel = genAI.getGenerativeModel({ model: "models/gemini-1.0-pro" });
+         const result = await lastResortModel.generateContent(input);
          return result.response.text();
-       } catch (proError) {
-         throw new Error("Koneksi AI Gagal: Model tidak ditemukan atau API Key tidak valid.");
+       } catch (finalError) {
+         throw new Error("Koneksi AI Gagal: Akses model ditolak atau API Key tidak memiliki izin untuk model ini.");
        }
     }
     throw new Error(error?.message || "Koneksi ke AI gagal");

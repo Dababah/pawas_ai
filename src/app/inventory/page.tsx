@@ -10,6 +10,8 @@ import 'jspdf-autotable';
 const InventoryPage = () => {
   const [stock, setStock] = useState<Inventory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newItem, setNewItem] = useState({ unit: '', buy_price: 0, sell_price: 0, status: 'ready' });
 
   const fetchInventory = async () => {
     setLoading(true);
@@ -31,6 +33,18 @@ const InventoryPage = () => {
     if (!error) {
       setStock(prev => prev.filter(item => item.id !== id));
     }
+  };
+
+  const addUnit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { data, error } = await supabase.from('inventory').insert([newItem]).select();
+    if (data) {
+      setStock([data[0], ...stock]);
+    } else {
+      setStock([{ id: Date.now(), ...newItem }, ...stock]);
+    }
+    setIsModalOpen(false);
+    setNewItem({ unit: '', buy_price: 0, sell_price: 0, status: 'ready' });
   };
 
   const exportToPDF = () => {
@@ -103,7 +117,7 @@ const InventoryPage = () => {
             <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
           </button>
           <button 
-            onClick={() => window.location.href = '/assistant'} 
+            onClick={() => setIsModalOpen(true)} 
             className="flex items-center gap-2 px-5 py-2.5 bg-[#f0ede4] text-[#0d1a15] rounded-xl text-sm font-bold hover:bg-[#8c7851] hover:text-[#f0ede4] transition-all shadow-xl"
           >
             <Plus size={18} />
@@ -214,6 +228,78 @@ const InventoryPage = () => {
           )}
         </div>
       </div>
+
+      {/* Add Unit Modal */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsModalOpen(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md glass-panel p-8 space-y-6"
+            >
+              <h2 className="text-2xl font-black text-white font-outfit tracking-tight">Register Unit</h2>
+              <form onSubmit={addUnit} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-[#8c7851] uppercase tracking-widest px-1">Unit Model</label>
+                  <input 
+                    required
+                    value={newItem.unit}
+                    onChange={(e) => setNewItem({...newItem, unit: e.target.value})}
+                    placeholder="e.g. iPhone 15 Pro Max 256GB"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white outline-none focus:border-[#4a6741] transition-all"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-[#8c7851] uppercase tracking-widest px-1">Buy Price (Rp)</label>
+                    <input 
+                      required
+                      type="number"
+                      value={newItem.buy_price}
+                      onChange={(e) => setNewItem({...newItem, buy_price: parseInt(e.target.value)})}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white outline-none focus:border-[#4a6741] transition-all font-outfit"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-[#8c7851] uppercase tracking-widest px-1">Target Sell (Rp)</label>
+                    <input 
+                      required
+                      type="number"
+                      value={newItem.sell_price}
+                      onChange={(e) => setNewItem({...newItem, sell_price: parseInt(e.target.value)})}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white outline-none focus:border-[#4a6741] transition-all font-outfit"
+                    />
+                  </div>
+                </div>
+                <div className="pt-4 flex gap-3">
+                  <button 
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="flex-1 py-3 border border-white/10 text-white rounded-xl text-sm font-bold hover:bg-white/5 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit"
+                    className="flex-1 py-3 bg-[#f0ede4] text-[#0d1a15] rounded-xl text-sm font-bold hover:bg-[#4a6741] hover:text-white transition-all"
+                  >
+                    Save Unit
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

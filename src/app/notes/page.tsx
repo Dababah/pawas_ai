@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FileText, Plus, Search, MoreVertical, Hash, List, Type, Image as ImageIcon, Layout, ArrowLeft, Sparkles, Clock, Star, Share2 } from 'lucide-react';
+import { FileText, Plus, Search, MoreVertical, Hash, List, Type, Image as ImageIcon, Layout, ArrowLeft, Sparkles, Clock, Star, Share2, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const NotesPage = () => {
@@ -45,6 +45,29 @@ const NotesPage = () => {
       }
     };
     input.click();
+  };
+
+  const deleteNote = (id: number) => {
+    if (confirm('Hapus catatan ini secara permanen?')) {
+      setNotes(prev => prev.filter(n => n.id !== id));
+      setActiveNote(null);
+    }
+  };
+
+  const shareNote = () => {
+    const note = notes.find(n => n.id === activeNote);
+    if (!note) return;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: note.title,
+        text: note.content.replace(/<[^>]*>/g, ''),
+        url: window.location.href,
+      }).catch(console.error);
+    } else {
+      navigator.clipboard.writeText(`${note.title}\n\n${note.content.replace(/<[^>]*>/g, '')}`);
+      alert('Konten catatan telah disalin ke clipboard.');
+    }
   };
 
   const containerVariants = {
@@ -126,7 +149,15 @@ const NotesPage = () => {
                           </div>
                         </div>
                       </div>
-                      <MoreVertical size={16} className="text-zinc-800 group-hover:text-zinc-500 transition-colors" />
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteNote(note.id);
+                        }}
+                        className="p-2 text-zinc-800 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </motion.button>
                   ))}
                 </div>
@@ -139,12 +170,17 @@ const NotesPage = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    { label: 'New Database', icon: <Layout className="text-blue-500" />, sub: 'Structured data' },
-                    { label: 'Templates', icon: <List className="text-purple-500" />, sub: 'Efficiency nodes' },
-                    { label: 'Cloud Sync', icon: <Clock className="text-emerald-500" />, sub: 'Real-time backup' },
-                    { label: 'Neural AI', icon: <Sparkles className="text-orange-500" />, sub: 'Auto completion' },
+                    { label: 'New Database', icon: <Layout className="text-blue-500" />, sub: 'Structured data', cmd: () => alert('Database Neural sedang diinisialisasi...') },
+                    { label: 'Templates', icon: <List className="text-purple-500" />, sub: 'Efficiency nodes', cmd: () => alert('Memuat template profesional...') },
+                    { label: 'Cloud Sync', icon: <Clock className="text-emerald-500" />, sub: 'Real-time backup', cmd: () => alert('Sinkronisasi awan aktif.') },
+                    { label: 'Neural AI', icon: <Sparkles className="text-orange-500" />, sub: 'Auto completion', cmd: () => window.location.href = '/assistant' },
                   ].map((sys, idx) => (
-                    <motion.div key={idx} variants={itemVariants} className="p-5 glass-panel group hover:bg-white/[0.02] cursor-pointer transition-all">
+                    <motion.div 
+                      key={idx} 
+                      variants={itemVariants} 
+                      onClick={sys.cmd}
+                      className="p-5 glass-panel group hover:bg-white/[0.02] cursor-pointer transition-all"
+                    >
                       <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                         {sys.icon}
                       </div>
@@ -172,11 +208,17 @@ const NotesPage = () => {
                 <ArrowLeft size={16} /> Back to Library
               </button>
               <div className="flex items-center gap-4">
-                <button className="p-2 text-zinc-500 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <button 
+                  onClick={shareNote}
+                  className="p-2 text-zinc-500 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                >
                   <Share2 size={18} />
                 </button>
-                <button className="p-2 text-zinc-500 hover:text-white hover:bg-white/5 rounded-lg transition-all">
-                  <MoreVertical size={18} />
+                <button 
+                  onClick={() => activeNote && deleteNote(activeNote)}
+                  className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                >
+                  <Trash2 size={18} />
                 </button>
               </div>
             </header>
