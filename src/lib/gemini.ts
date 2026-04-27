@@ -25,16 +25,12 @@ Selalu berikan respons teks yang ramah, namun sertakan objek JSON di akhir setia
 
 export async function askPawasAI(input: string, history: any[] = [], imageBase64?: string) {
   try {
-    // Try Flash first for vision/speed, fallback to Pro if not found
-    let modelName = imageBase64 ? "gemini-1.5-flash" : "gemini-1.5-flash";
-    let model;
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     
-    try {
-      model = genAI.getGenerativeModel({ model: modelName });
-    } catch (e) {
-      model = genAI.getGenerativeModel({ model: "gemini-pro" });
-    }
-    
+    // Combine history and current input into a single prompt for better reliability
+    const chatHistory = history.map(h => `${h.role === 'user' ? 'User' : 'Assistant'}: ${h.parts[0].text}`).join('\n');
+    const fullPrompt = `${systemPrompt}\n\nRiwayat Percakapan:\n${chatHistory}\n\nUser: ${input}\n\nAssistant:`;
+
     if (imageBase64) {
       const match = imageBase64.match(/^data:(.*);base64,(.*)$/);
       if (!match) throw new Error("Invalid image format");
@@ -42,7 +38,6 @@ export async function askPawasAI(input: string, history: any[] = [], imageBase64
       const mimeType = match[1];
       const data = match[2];
 
-      const prompt = `${systemPrompt}\n\nUser Input: ${input}\nAnalisis gambar yang dilampirkan.`;
       const imageParts = [{
         inlineData: {
           data: data,
@@ -50,46 +45,25 @@ export async function askPawasAI(input: string, history: any[] = [], imageBase64
         }
       }];
       
-      try {
-        const result = await model.generateContent([prompt, ...imageParts]);
-        return result.response.text();
-      } catch (e) {
-        // If flash fails with images, we can't really fallback to pro for vision easily in this SDK version
-        // but we can try gemini-pro for text-only as last resort
-        throw e;
-      }
+      const result = await model.generateContent([fullPrompt, ...imageParts]);
+      return result.response.text();
     }
 
-    const chat = model.startChat({
-      history: [
-        { role: "user", parts: [{ text: systemPrompt }] },
-        { role: "model", parts: [{ text: "Siap, saya Pawas.ai. Bagaimana saya bisa membantu Anda hari ini?" }] },
-        ...history
-      ],
-    });
-
-    try {
-      const result = await chat.sendMessage(input);
-      const response = await result.response;
-      return response.text();
-    } catch (e: any) {
-      if (e.message?.includes('not found')) {
-        // Fallback to gemini-pro for text
-        const proModel = genAI.getGenerativeModel({ model: "gemini-pro" });
-        const proChat = proModel.startChat({
-          history: [
-            { role: "user", parts: [{ text: systemPrompt }] },
-            { role: "model", parts: [{ text: "Siap, saya Pawas.ai. Bagaimana saya bisa membantu Anda hari ini?" }] },
-            ...history
-          ],
-        });
-        const proResult = await proChat.sendMessage(input);
-        return proResult.response.text();
-      }
-      throw e;
-    }
+    const result = await model.generateContent(fullPrompt);
+    const response = await result.response;
+    return response.text();
   } catch (error: any) {
-    console.error("Gemini API Error:", error);
+    console.error("Gemini API Error Detail:", error);
+    // If Flash fails, try the older Pro model as absolute last resort
+    if (error.message?.includes('not found') || error.message?.includes('404')) {
+       try {
+         const proModel = genAI.getGenerativeModel({ model: "gemini-pro" });
+         const result = await proModel.generateContent(input);
+         return result.response.text();
+       } catch (proError) {
+         throw new Error("Koneksi AI Gagal: Model tidak ditemukan atau API Key tidak valid.");
+       }
+    }
     throw new Error(error?.message || "Koneksi ke AI gagal");
   }
 }
