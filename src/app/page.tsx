@@ -169,23 +169,6 @@ const Dashboard = () => {
             </Link>
           </section>
 
-          <section className="p-6 rounded-3xl bg-gradient-to-br from-[#1a2e26] to-[#0d1a15] border border-white/5 relative overflow-hidden">
-            <div className="absolute bottom-0 right-0 opacity-10 text-[#4a6741]">
-              <Sparkles size={80} />
-            </div>
-            <h4 className="text-sm font-bold text-[#f0ede4] mb-2 flex items-center gap-2">
-              <Smartphone size={16} className="text-[#8c7851]" /> Neural Pro Tip
-            </h4>
-            <p className="text-xs text-[#8c7851]/70 leading-relaxed mb-4">
-              Gunakan mode <span className="text-[#f0ede4]">Command + K</span> untuk mencari catatan kuliah secara instan dari manapun.
-            </p>
-            <button 
-              onClick={() => window.location.href = '/assistant'}
-              className="w-full py-2 bg-[#f0ede4] text-[#0d1a15] text-[10px] font-bold uppercase tracking-widest rounded-xl hover:bg-[#8c7851] hover:text-[#f0ede4] transition-all"
-            >
-              Upgrade System
-            </button>
-          </section>
         </div>
       </div>
     </motion.div>

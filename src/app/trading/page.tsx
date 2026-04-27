@@ -78,7 +78,10 @@ const TradingPage = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          <button className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-white/5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-colors">
+          <button 
+            onClick={() => alert('Fitur filter sedang dalam pengembangan neural.')}
+            className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-white/5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-colors"
+          >
             <Filter size={14} /> Filter
           </button>
           <button 

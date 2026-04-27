@@ -25,10 +25,17 @@ Selalu berikan respons teks yang ramah, namun sertakan objek JSON di akhir setia
 
 export async function askPawasAI(input: string, history: any[] = [], imageBase64?: string) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // Try Flash first for vision/speed, fallback to Pro if not found
+    let modelName = imageBase64 ? "gemini-1.5-flash" : "gemini-1.5-flash";
+    let model;
+    
+    try {
+      model = genAI.getGenerativeModel({ model: modelName });
+    } catch (e) {
+      model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    }
     
     if (imageBase64) {
-      // Extract mimeType and base64 data correctly
       const match = imageBase64.match(/^data:(.*);base64,(.*)$/);
       if (!match) throw new Error("Invalid image format");
       
@@ -43,8 +50,14 @@ export async function askPawasAI(input: string, history: any[] = [], imageBase64
         }
       }];
       
-      const result = await model.generateContent([prompt, ...imageParts]);
-      return result.response.text();
+      try {
+        const result = await model.generateContent([prompt, ...imageParts]);
+        return result.response.text();
+      } catch (e) {
+        // If flash fails with images, we can't really fallback to pro for vision easily in this SDK version
+        // but we can try gemini-pro for text-only as last resort
+        throw e;
+      }
     }
 
     const chat = model.startChat({
@@ -55,9 +68,26 @@ export async function askPawasAI(input: string, history: any[] = [], imageBase64
       ],
     });
 
-    const result = await chat.sendMessage(input);
-    const response = await result.response;
-    return response.text();
+    try {
+      const result = await chat.sendMessage(input);
+      const response = await result.response;
+      return response.text();
+    } catch (e: any) {
+      if (e.message?.includes('not found')) {
+        // Fallback to gemini-pro for text
+        const proModel = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const proChat = proModel.startChat({
+          history: [
+            { role: "user", parts: [{ text: systemPrompt }] },
+            { role: "model", parts: [{ text: "Siap, saya Pawas.ai. Bagaimana saya bisa membantu Anda hari ini?" }] },
+            ...history
+          ],
+        });
+        const proResult = await proChat.sendMessage(input);
+        return proResult.response.text();
+      }
+      throw e;
+    }
   } catch (error: any) {
     console.error("Gemini API Error:", error);
     throw new Error(error?.message || "Koneksi ke AI gagal");

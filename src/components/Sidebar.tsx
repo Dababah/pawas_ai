@@ -5,9 +5,22 @@ import { Home, FileText, TrendingUp, Clock, MessageSquare, Search, Settings, Hel
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
+import SearchModal from './SearchModal';
 
 const Sidebar = () => {
   const pathname = usePathname();
+  const [isSearchOpen, setIsSearchOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const menuItems = [
     { icon: Home, label: 'Dashboard', path: '/' },
@@ -32,7 +45,10 @@ const Sidebar = () => {
         </div>
 
         <div className="space-y-2">
-          <button className="w-full flex items-center gap-3 px-4 py-2 text-[#8c7851] hover:bg-white/5 rounded-xl text-sm transition-all group mb-6 border border-transparent hover:border-white/5">
+          <button 
+            onClick={() => setIsSearchOpen(true)}
+            className="w-full flex items-center gap-3 px-4 py-2 text-[#8c7851] hover:bg-white/5 rounded-xl text-sm transition-all group mb-6 border border-transparent hover:border-white/5"
+          >
             <Search size={18} className="group-hover:text-[#f0ede4] transition-colors" />
             <span className="group-hover:text-[#f0ede4] transition-colors">Quick Search</span>
             <kbd className="ml-auto text-[10px] bg-[#1a2e26] px-1.5 py-0.5 rounded border border-white/10 text-[#8c7851]">⌘K</kbd>
@@ -77,15 +93,23 @@ const Sidebar = () => {
         </div>
 
         <div className="mt-auto pt-6 border-t border-white/5 space-y-1">
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-white hover:bg-white/5 rounded-xl text-sm transition-all">
+          <button 
+            onClick={() => window.location.href = '/assistant'}
+            className="w-full flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-white hover:bg-white/5 rounded-xl text-sm transition-all"
+          >
             <Settings size={18} />
             <span className="font-medium">Settings</span>
           </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-white hover:bg-white/5 rounded-xl text-sm transition-all">
+          <button 
+            onClick={() => window.open('https://wa.me/628123456789', '_blank')}
+            className="w-full flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-white hover:bg-white/5 rounded-xl text-sm transition-all"
+          >
             <HelpCircle size={18} />
             <span className="font-medium">Support</span>
           </button>
         </div>
+
+        <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       </aside>
 
       {/* Mobile/Tablet Bottom Nav */}

@@ -26,6 +26,27 @@ const NotesPage = () => {
     setActiveNote(newId);
   };
 
+  const handleEditorCommand = (command: string, value?: string) => {
+    document.execCommand(command, false, value);
+  };
+
+  const handleImageUpload = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e: any) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          handleEditorCommand('insertImage', event.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    input.click();
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -169,6 +190,10 @@ const NotesPage = () => {
                   className="text-4xl md:text-6xl font-black text-white tracking-tight outline-none font-outfit" 
                   contentEditable 
                   suppressContentEditableWarning
+                  onBlur={(e) => {
+                    const newTitle = e.currentTarget.textContent || '';
+                    setNotes(prev => prev.map(n => n.id === activeNote ? { ...n, title: newTitle } : n));
+                  }}
                 >
                   {notes.find(n => n.id === activeNote)?.title}
                 </h1>
@@ -191,6 +216,10 @@ const NotesPage = () => {
                 className="text-lg md:text-xl text-zinc-400 leading-relaxed outline-none min-h-[400px] font-medium"
                 contentEditable 
                 suppressContentEditableWarning
+                onBlur={(e) => {
+                  const newContent = e.currentTarget.innerHTML;
+                  setNotes(prev => prev.map(n => n.id === activeNote ? { ...n, content: newContent } : n));
+                }}
               >
                 {notes.find(n => n.id === activeNote)?.content}
               </div>
@@ -199,13 +228,18 @@ const NotesPage = () => {
             <div className="mt-auto py-6 border-t border-white/5 flex items-center justify-between bg-black/50 backdrop-blur-xl">
               <div className="flex gap-2">
                 {[
-                  <Type key="t" size={20} />, 
-                  <List key="l" size={20} />, 
-                  <ImageIcon key="i" size={20} />, 
-                  <Hash key="h" size={20} />
-                ].map((icon, idx) => (
-                  <button key={idx} className="p-2.5 text-zinc-600 hover:text-white hover:bg-white/5 rounded-xl transition-all">
-                    {icon}
+                  { icon: <Type size={20} />, cmd: () => handleEditorCommand('bold'), label: 'Bold' },
+                  { icon: <List size={20} />, cmd: () => handleEditorCommand('insertUnorderedList'), label: 'List' },
+                  { icon: <ImageIcon size={20} />, cmd: handleImageUpload, label: 'Image' },
+                  { icon: <Hash size={20} />, cmd: () => handleEditorCommand('formatBlock', '<h3>'), label: 'Heading' }
+                ].map((tool, idx) => (
+                  <button 
+                    key={idx} 
+                    onClick={tool.cmd}
+                    title={tool.label}
+                    className="p-2.5 text-zinc-600 hover:text-[#f0ede4] hover:bg-white/5 rounded-xl transition-all active:scale-95"
+                  >
+                    {tool.icon}
                   </button>
                 ))}
               </div>
