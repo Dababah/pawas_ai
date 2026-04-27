@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Home, FileText, TrendingUp, Globe, MessageSquare, Search, Settings, HelpCircle, LayoutGrid } from 'lucide-react';
+import { Home, FileText, TrendingUp, Clock, MessageSquare, Search, Settings, HelpCircle, LayoutGrid } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
