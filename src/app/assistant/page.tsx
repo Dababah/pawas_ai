@@ -83,9 +83,18 @@ const AssistantPage = () => {
               await supabase.from('tasks').insert([data]);
               if (data.deadline) await scheduleTaskNotification(data.title, data.deadline);
             }
-            else if (action === 'save_inventory') await supabase.from('inventory').insert([data]);
-            else if (action === 'log_trade') await supabase.from('trades').insert([data]);
-            else if (action === 'save_note') await supabase.from('notes').insert([data]);
+            else if (action === 'save_inventory') {
+              await bizSupabase.from('inventory').insert([data]);
+            }
+            else if (action === 'log_biz_sale') {
+              await bizSupabase.from('sales').insert([data]);
+            }
+            else if (action === 'log_trade') {
+              await supabase.from('trades').insert([data]);
+            }
+            else if (action === 'save_note') {
+              await supabase.from('notes').insert([data]);
+            }
           } catch (e) {
             console.error('Database action failed', e);
           }

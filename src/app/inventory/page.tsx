@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Package, Plus, Smartphone, Trash2, RefreshCw, FileDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { supabase, Inventory } from '@/lib/supabase';
+import { bizSupabase, Inventory } from '@/lib/supabase';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
@@ -13,7 +13,7 @@ const InventoryPage = () => {
 
   const fetchInventory = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await bizSupabase
       .from('inventory')
       .select('*')
       .order('id', { ascending: false });
@@ -27,7 +27,7 @@ const InventoryPage = () => {
   }, []);
 
   const deleteItem = async (id: number) => {
-    const { error } = await supabase.from('inventory').delete().eq('id', id);
+    const { error } = await bizSupabase.from('inventory').delete().eq('id', id);
     if (!error) {
       setStock(prev => prev.filter(item => item.id !== id));
     }

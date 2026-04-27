@@ -1,9 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-
+// Connection 1: Pawas.ai Internal (Notes, Tasks, Trading)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Connection 2: Business HP (Inventory, Sales)
+const bizSupabaseUrl = process.env.NEXT_PUBLIC_BIZ_SUPABASE_URL || '';
+const bizSupabaseAnonKey = process.env.NEXT_PUBLIC_BIZ_SUPABASE_ANON_KEY || '';
+export const bizSupabase = createClient(bizSupabaseUrl, bizSupabaseAnonKey);
 
 export type Task = {
   id?: number;
@@ -24,7 +29,7 @@ export type Inventory = {
 export type Trade = {
   id?: number;
   pair: string;
-  entry: string;
+  entry: number;
   result: string;
   notes: string;
   created_at?: string;
@@ -34,7 +39,6 @@ export type Note = {
   id?: number;
   title: string;
   content: string;
-  icon?: string;
   category: string;
-  updated_at?: string;
+  icon: string;
 };
