@@ -52,17 +52,18 @@ const SearchModal = ({ isOpen, onClose }: SearchModalProps) => {
           exit={{ opacity: 0, scale: 0.95, y: -20 }}
           className="relative w-full max-w-xl bg-[#0d1a15] border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
         >
-          <div className="p-4 border-b border-white/5 flex items-center gap-3">
-            <Search className="text-[#8c7851]" size={20} />
+          <div className="p-5 border-b border-white/5 flex items-center gap-3">
+            <Search className="text-zinc-500" size={18} />
             <input 
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search across your neural network..."
-              className="flex-1 bg-transparent border-none outline-none text-[#f0ede4] placeholder:text-[#8c7851]/40 text-lg"
+              placeholder="Search neural network..."
+              className="flex-1 w-full bg-transparent border-none outline-none text-[#f0ede4] placeholder:text-zinc-600 text-sm font-medium"
             />
-            <button onClick={onClose} className="p-1 hover:bg-white/5 rounded-lg text-[#8c7851]">
-              <X size={20} />
+            <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-lg text-zinc-500 hover:text-white transition-colors">
+              <X size={18} />
+
             </button>
           </div>
 
@@ -90,12 +91,12 @@ const SearchModal = ({ isOpen, onClose }: SearchModalProps) => {
                 )}
               </div>
             ) : (
-              <div className="p-4 space-y-4">
-                <p className="text-[10px] font-bold text-[#8c7851]/40 uppercase tracking-widest px-2">Recently Accessed</p>
-                <div className="grid grid-cols-2 gap-2">
+              <div className="p-5 space-y-4">
+                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">Recently Accessed</p>
+                <div className="flex flex-wrap gap-2">
                   {['Kriptografi', 'XAUUSD', 'Suppliers', 'RSA'].map((tag) => (
-                    <button key={tag} className="flex items-center gap-2 p-2 rounded-lg bg-white/5 text-xs text-[#8c7851] hover:text-[#f0ede4] transition-all">
-                      <Sparkles size={12} /> {tag}
+                    <button key={tag} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/5 text-xs font-medium text-zinc-400 hover:text-white hover:border-[#8c7851]/50 hover:bg-[#8c7851]/10 transition-all">
+                      <Sparkles size={12} className="text-[#8c7851]" /> {tag}
                     </button>
                   ))}
                 </div>
@@ -103,11 +104,11 @@ const SearchModal = ({ isOpen, onClose }: SearchModalProps) => {
             )}
           </div>
 
-          <div className="p-3 border-t border-white/5 bg-black/20 flex items-center justify-between text-[10px] text-[#8c7851]/40 font-bold uppercase tracking-tighter">
-            <span>Press Enter to select</span>
-            <div className="flex gap-2">
-              <span className="px-1.5 py-0.5 bg-white/5 rounded border border-white/5">↑↓ Navigate</span>
-              <span className="px-1.5 py-0.5 bg-white/5 rounded border border-white/5">ESC Close</span>
+          <div className="p-4 border-t border-white/5 bg-black/20 flex flex-wrap items-center justify-between gap-4 text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
+            <span className="hidden sm:inline">Press Enter to select</span>
+            <div className="flex flex-wrap gap-2">
+              <span className="px-2 py-1 bg-white/5 rounded-md border border-white/10">↑↓ Navigate</span>
+              <span className="px-2 py-1 bg-white/5 rounded-md border border-white/10">ESC Close</span>
             </div>
           </div>
         </motion.div>
