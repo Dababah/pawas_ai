@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BookOpen, TrendingUp, Smartphone, Clock, Globe, ArrowUpRight, Search, Sparkles, Zap, Target, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
 
 const Dashboard = () => {
   const containerVariants = {
@@ -20,6 +21,20 @@ const Dashboard = () => {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0 }
   };
+
+  const [recentTasks, setRecentTasks] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchRecentTasks = async () => {
+      const { data } = await supabase
+        .from('tasks')
+        .select('*')
+        .order('id', { ascending: false })
+        .limit(3);
+      if (data) setRecentTasks(data);
+    };
+    fetchRecentTasks();
+  }, []);
 
   return (
     <motion.div 
@@ -128,27 +143,36 @@ const Dashboard = () => {
               <Link href="/tasks" className="text-[10px] text-[#8c7851]/40 hover:text-[#f0ede4] transition-colors uppercase font-bold tracking-widest">View All</Link>
             </motion.div>
             
-            <Link href="/tasks">
-              <motion.div variants={itemVariants} className="glass-panel p-5 space-y-4 relative overflow-hidden group cursor-pointer hover:border-[#8c7851]/20 transition-all">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-[#6b4e3d]/5 rounded-full -mr-12 -mt-12 blur-2xl group-hover:bg-[#6b4e3d]/10 transition-all" />
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-[#6b4e3d]/10 rounded-xl flex items-center justify-center text-[#6b4e3d] shrink-0">
-                    <Zap size={20} />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-bold text-[#f0ede4]">Tugas Kriptografi</p>
-                    <p className="text-[11px] text-[#8c7851]/70 leading-relaxed">Implementasi algoritma RSA dengan Python.</p>
-                  </div>
+            <div className="grid gap-3">
+              {recentTasks.length > 0 ? recentTasks.map((task, idx) => (
+                <Link href="/tasks" key={idx}>
+                  <motion.div variants={itemVariants} className="glass-panel p-5 space-y-4 relative overflow-hidden group cursor-pointer hover:border-[#8c7851]/20 transition-all">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-[#6b4e3d]/5 rounded-full -mr-12 -mt-12 blur-2xl group-hover:bg-[#6b4e3d]/10 transition-all" />
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 bg-[#6b4e3d]/10 rounded-xl flex items-center justify-center text-[#6b4e3d] shrink-0">
+                        <Zap size={20} />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-bold text-[#f0ede4] line-clamp-1">{task.title}</p>
+                        <p className="text-[11px] text-[#8c7851]/70 leading-relaxed">{task.matkul || 'General Task'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 pt-2">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-1.5 h-1.5 rounded-full ${task.status === 'completed' ? 'bg-emerald-500' : 'bg-[#6b4e3d] animate-pulse'}`} />
+                        <span className={`text-[10px] font-bold uppercase ${task.status === 'completed' ? 'text-emerald-500' : 'text-[#6b4e3d]'}`}>
+                          {task.status === 'completed' ? 'Selesai' : 'Pending'}
+                        </span>
+                      </div>
+                    </div>
+                  </motion.div>
+                </Link>
+              )) : (
+                <div className="text-center py-10 bg-white/5 rounded-2xl border border-dashed border-white/10">
+                  <p className="text-zinc-500 text-xs font-bold uppercase">No Active Deadlines</p>
                 </div>
-                <div className="flex items-center justify-between gap-2 pt-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#6b4e3d] animate-pulse" />
-                    <span className="text-[10px] text-[#6b4e3d] font-bold uppercase">14 Jam Lagi</span>
-                  </div>
-                  <span className="text-[10px] px-2 py-0.5 bg-white/5 border border-white/5 rounded text-[#8c7851]/50 font-bold uppercase tracking-tighter">High Priority</span>
-                </div>
-              </motion.div>
-            </Link>
+              )}
+            </div>
 
             <Link href="/tasks">
               <motion.div variants={itemVariants} className="glass-panel p-5 space-y-4 cursor-pointer hover:border-[#8c7851]/20 transition-all">
