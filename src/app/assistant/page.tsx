@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Mic, Send, Bot, User, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { askPawasAI } from '@/lib/gemini';
+import { supabase } from '@/lib/supabase';
 
 const AssistantPage = () => {
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; text: string }[]>([
@@ -33,20 +34,27 @@ const AssistantPage = () => {
         parts: [{ text: m.text }]
       })));
       
-      // Basic JSON extraction (simplified for now)
       const cleanText = response.replace(/<action>[\s\S]*?<\/action>/g, '').trim();
       setMessages(prev => [...prev, { role: 'assistant', text: cleanText || "Data telah saya proses." }]);
       
-      // Handle actions if present
       if (response.includes('<action>')) {
         const actionMatch = response.match(/<action>([\s\S]*?)<\/action>/);
         if (actionMatch) {
           try {
-            const actionData = JSON.parse(actionMatch[1]);
-            console.log('Executing action:', actionData);
-            // Here you would call supabase functions
+            const { action, data } = JSON.parse(actionMatch[1]);
+            console.log('Executing action:', action, data);
+
+            if (action === 'save_task') {
+              await supabase.from('tasks').insert([data]);
+            } else if (action === 'save_inventory') {
+              await supabase.from('inventory').insert([data]);
+            } else if (action === 'log_trade') {
+              await supabase.from('trades').insert([data]);
+            } else if (action === 'save_note') {
+              await supabase.from('notes').insert([data]);
+            }
           } catch (e) {
-            console.error('Failed to parse action JSON', e);
+            console.error('Failed to execute database action', e);
           }
         }
       }
