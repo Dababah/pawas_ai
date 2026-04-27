@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Mic, Send, Bot, User, Sparkles, Loader2, Volume2, VolumeX, Image as ImageIcon, X, Command } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { askPawasAI } from '@/lib/gemini';
-import { supabase, bizSupabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { scheduleTaskNotification } from '@/lib/notifications';
 
 const AssistantPage = () => {
@@ -84,10 +84,10 @@ const AssistantPage = () => {
               if (data.deadline) await scheduleTaskNotification(data.title, data.deadline);
             }
             else if (action === 'save_inventory') {
-              await bizSupabase.from('inventory').insert([data]);
+              await supabase.from('inventory').insert([data]);
             }
             else if (action === 'log_biz_sale') {
-              await bizSupabase.from('sales').insert([data]);
+              await supabase.from('sales').insert([data]);
             }
             else if (action === 'log_trade') {
               await supabase.from('trades').insert([data]);
