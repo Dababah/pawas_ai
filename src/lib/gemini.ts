@@ -25,52 +25,56 @@ Selalu berikan respons teks yang ramah, namun sertakan objek JSON di akhir setia
 
 export async function askPawasAI(input: string, history: any[] = [], imageBase64?: string) {
   try {
-    // Try Flash Latest first, then Pro with explicit models/ prefix
-    let model;
-    try {
-      model = genAI.getGenerativeModel({ model: "models/gemini-1.5-flash-latest" });
-    } catch (e) {
-      model = genAI.getGenerativeModel({ model: "models/gemini-pro" });
-    }
-    
-    // Combine history and current input into a single prompt
     const chatHistory = history.map(h => `${h.role === 'user' ? 'User' : 'Assistant'}: ${h.parts[0].text}`).join('\n');
     const fullPrompt = `${systemPrompt}\n\nRiwayat Percakapan:\n${chatHistory}\n\nUser: ${input}\n\nAssistant:`;
+
+    const modelUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+    
+    let contents: any[] = [{
+      role: "user",
+      parts: [{ text: fullPrompt }]
+    }];
 
     if (imageBase64) {
       const match = imageBase64.match(/^data:(.*);base64,(.*)$/);
       if (!match) throw new Error("Invalid image format");
-      
-      const mimeType = match[1];
-      const data = match[2];
-
-      const imageParts = [{
+      contents[0].parts.push({
         inlineData: {
-          data: data,
-          mimeType: mimeType
+          mimeType: match[1],
+          data: match[2]
         }
-      }];
-      
-      const result = await model.generateContent([fullPrompt, ...imageParts]);
-      return result.response.text();
+      });
     }
 
-    const result = await model.generateContent(fullPrompt);
-    const response = await result.response;
-    return response.text();
-  } catch (error: any) {
-    console.error("Gemini API Error Detail:", error);
-    
-    // Last ditch effort: try models/gemini-1.0-pro
-    if (error.message?.includes('not found') || error.message?.includes('404')) {
-       try {
-         const lastResortModel = genAI.getGenerativeModel({ model: "models/gemini-1.0-pro" });
-         const result = await lastResortModel.generateContent(input);
-         return result.response.text();
-       } catch (finalError) {
-         throw new Error("Koneksi AI Gagal: Akses model ditolak atau API Key tidak memiliki izin untuk model ini.");
-       }
+    const response = await fetch(modelUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contents })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      // Fallback to gemini-pro if flash fails
+      if (response.status === 404) {
+        const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
+        const fallbackResponse = await fetch(fallbackUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: fullPrompt }] }] }) // No images for pro
+        });
+        const fallbackData = await fallbackResponse.json();
+        if (!fallbackResponse.ok) {
+          throw new Error(fallbackData.error?.message || "Fallback model also failed.");
+        }
+        return fallbackData.candidates?.[0]?.content?.parts?.[0]?.text || "AI memberikan respons kosong.";
+      }
+      throw new Error(data.error?.message || `HTTP Error ${response.status}`);
     }
+
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "AI memberikan respons kosong.";
+  } catch (error: any) {
+    console.error("Gemini Fetch API Error:", error);
     throw new Error(error?.message || "Koneksi ke AI gagal");
   }
 }
