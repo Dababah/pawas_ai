@@ -29,6 +29,8 @@ export async function askPawasAI(input: string, history: any[] = [], imageBase64
     const fullPrompt = `${systemPrompt}\n\nRiwayat Percakapan:\n${chatHistory}\n\nUser: ${input}\n\nAssistant:`;
 
     const modelsToTry = [
+      'gemini-1.5-flash',
+      'gemini-1.5-pro',
       'gemini-3.1-flash-lite-preview',
       'gemini-3.1-pro-preview',
       'gemini-3-flash-preview',
