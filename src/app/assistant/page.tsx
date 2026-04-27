@@ -25,7 +25,7 @@ const AssistantPage = () => {
     }
   }, [messages]);
 
-  const triggerHaptic = (pattern = 10) => {
+  const triggerHaptic = (pattern: number | number[] = 10) => {
     if (typeof window !== 'undefined' && navigator.vibrate) navigator.vibrate(pattern);
   };
 
