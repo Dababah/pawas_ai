@@ -4,12 +4,15 @@ import React, { useState, useEffect } from 'react';
 import { FileText, Plus, Search, MoreVertical, Hash, List, Type, Image as ImageIcon, Layout, ArrowLeft, Sparkles, Clock, Star, Share2, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
+import { askPawasAI } from '@/lib/gemini';
 
 const NotesPage = () => {
   const [activeNote, setActiveNote] = useState<number | null>(null);
   const [notes, setNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('All');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
   
   const fetchNotes = async () => {
     setLoading(true);
@@ -92,6 +95,28 @@ const NotesPage = () => {
     } else {
       navigator.clipboard.writeText(`${note.title}\n\n${note.content.replace(/<[^>]*>/g, '')}`);
       alert('Konten catatan telah disalin ke clipboard.');
+    }
+  };
+
+  const generateNoteContent = async () => {
+    if (!aiPrompt.trim() || !activeNote) return;
+    setIsGenerating(true);
+    try {
+      const response = await askPawasAI(`Tolong buatkan isi catatan/artikel/materi yang sangat profesional dan rapi untuk topik: "${aiPrompt}". Gunakan paragraf, bullet points (<ul><li>), atau header (<h3>) HTML standar jika diperlukan agar tampilannya bagus. Jangan berikan balasan percakapan, cukup langsung teks materi utamanya saja tanpa backticks markdown.`);
+      
+      const note = notes.find(n => n.id === activeNote);
+      if (!note) return;
+      
+      const cleanResponse = response.replace(/```html|```/g, '');
+      const existingContent = note.content === 'Start writing your neural notes here...' ? '' : note.content + '<br/><br/>';
+      const newContent = `${existingContent}<h3>✨ AI Generated: ${aiPrompt}</h3><br/>${cleanResponse}`;
+      
+      updateNote(activeNote, { content: newContent });
+      setAiPrompt('');
+    } catch (error) {
+      alert('Koneksi Neural gagal. Silakan coba lagi.');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -303,8 +328,39 @@ const NotesPage = () => {
                 </div>
               </div>
 
+              {/* AI Generator Bar */}
+              <div className="bg-[#8c7851]/10 border border-[#8c7851]/20 rounded-2xl p-4 flex flex-col sm:flex-row gap-3 mb-6 items-start sm:items-center shadow-lg transition-all focus-within:border-[#8c7851]/50">
+                <div className="flex items-center gap-3 w-full">
+                  <Sparkles size={20} className="text-[#8c7851] animate-pulse shrink-0" />
+                  <input 
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && generateNoteContent()}
+                    placeholder="Command Neural AI to write something..."
+                    className="flex-1 w-full bg-transparent border-none outline-none text-[#f0ede4] placeholder:text-[#8c7851]/40 text-sm font-medium"
+                    disabled={isGenerating}
+                  />
+                  <button 
+                    onClick={generateNoteContent}
+                    disabled={isGenerating || !aiPrompt.trim()}
+                    className="hidden sm:block px-5 py-2.5 bg-[#8c7851] text-[#0d1a15] rounded-xl text-xs font-bold hover:bg-[#f0ede4] transition-all disabled:opacity-50"
+                  >
+                    {isGenerating ? 'Generating...' : 'Generate'}
+                  </button>
+                </div>
+                {/* Mobile Generate Button */}
+                <button 
+                  onClick={generateNoteContent}
+                  disabled={isGenerating || !aiPrompt.trim()}
+                  className="sm:hidden w-full mt-2 px-5 py-2.5 bg-[#8c7851] text-[#0d1a15] rounded-xl text-xs font-bold hover:bg-[#f0ede4] transition-all disabled:opacity-50"
+                >
+                  {isGenerating ? 'Generating...' : 'Generate Neural Content'}
+                </button>
+              </div>
+
               <div 
-                className="text-lg md:text-xl text-zinc-400 leading-relaxed outline-none min-h-[400px] font-medium"
+                className="text-lg md:text-xl text-zinc-400 leading-relaxed outline-none min-h-[400px] font-medium custom-html-content"
+
                 contentEditable 
                 suppressContentEditableWarning
                 onBlur={(e) => {
