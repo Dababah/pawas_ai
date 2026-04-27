@@ -69,10 +69,9 @@ const Dashboard = () => {
                   <BookOpen size={24} />
                 </div>
                 <h3 className="text-lg font-bold text-[#f0ede4] mb-2 font-outfit">Materi Kuliah</h3>
-                <p className="text-sm text-[#8c7851]/70 leading-relaxed">Akses cepat ke repositori catatan Kriptografi & IT UMY secara terorganisir.</p>
+                <p className="text-sm text-[#8c7851]/70 leading-relaxed">Akses cepat repositori catatan Kriptografi & IT UMY.</p>
                 <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-4">
                   <span className="text-[10px] font-bold text-[#8c7851]/50 uppercase tracking-widest">12 Files</span>
-                  <span className="text-[10px] font-bold text-[#8c7851]/50 uppercase tracking-widest">Update 2h ago</span>
                 </div>
               </Link>
             </motion.div>
@@ -86,14 +85,14 @@ const Dashboard = () => {
                   <TrendingUp size={24} />
                 </div>
                 <h3 className="text-lg font-bold text-[#f0ede4] mb-2 font-outfit">Trading Journal</h3>
-                <p className="text-sm text-[#8c7851]/70 leading-relaxed">Analisis teknikal harian untuk market XAUUSD & BTCUSD dengan manajemen risiko.</p>
+                <p className="text-sm text-[#8c7851]/70 leading-relaxed">Analisis teknikal harian XAUUSD & BTCUSD.</p>
                 <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-4">
-                  <span className="text-[10px] font-bold text-[#6b4e3d]/60 uppercase tracking-widest">Active Margin</span>
-                  <span className="text-[10px] font-bold text-[#8c7851]/50 uppercase tracking-widest">4 Open Positions</span>
+                  <span className="text-[10px] font-bold text-[#6b4e3d]/60 uppercase tracking-widest">4 Open Positions</span>
                 </div>
               </Link>
             </motion.div>
           </section>
+
 
           <section className="space-y-4">
             <motion.div variants={itemVariants} className="flex items-center justify-between px-1">

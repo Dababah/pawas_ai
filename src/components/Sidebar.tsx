@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Home, FileText, TrendingUp, Clock, MessageSquare, Search, Settings, HelpCircle, LayoutGrid } from 'lucide-react';
+import { Home, FileText, TrendingUp, Clock, MessageSquare, Search, Settings, HelpCircle, LayoutGrid, Globe } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -94,6 +94,13 @@ const Sidebar = () => {
 
         <div className="mt-auto pt-6 border-t border-white/5 space-y-1">
           <button 
+            onClick={() => window.open('https://corepawas-hp.vercel.app/', '_blank')}
+            className="w-full flex items-center gap-3 px-4 py-3 text-[#8c7851] hover:text-[#f0ede4] hover:bg-[#8c7851]/10 rounded-xl text-sm transition-all border border-transparent hover:border-[#8c7851]/20"
+          >
+            <Globe size={18} />
+            <span className="font-bold">Core Pawas Web</span>
+          </button>
+          <button 
             onClick={() => window.location.href = '/assistant'}
             className="w-full flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-white hover:bg-white/5 rounded-xl text-sm transition-all"
           >
@@ -101,7 +108,7 @@ const Sidebar = () => {
             <span className="font-medium">Settings</span>
           </button>
           <button 
-            onClick={() => window.open('https://wa.me/628123456789', '_blank')}
+            onClick={() => window.open('https://wa.me/6282342309890', '_blank')}
             className="w-full flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-white hover:bg-white/5 rounded-xl text-sm transition-all"
           >
             <HelpCircle size={18} />
