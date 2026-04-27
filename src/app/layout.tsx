@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import BottomNav from "@/components/BottomNav";
+import Sidebar from "@/components/Sidebar";
 import SplashScreen from "@/components/SplashScreen";
 import AuthWrapper from "@/components/AuthWrapper";
 
@@ -19,13 +19,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.variable} antialiased pb-24`}>
+      <body className={`${inter.variable} antialiased bg-black`}>
         <AuthWrapper>
           <SplashScreen />
-          <main className="min-h-screen px-4 pt-8 max-w-lg mx-auto">
+          <Sidebar />
+          <main className="min-h-screen md:ml-64 px-6 pt-12 max-w-4xl mx-auto pb-24 md:pb-12">
             {children}
           </main>
-          <BottomNav />
         </AuthWrapper>
       </body>
     </html>

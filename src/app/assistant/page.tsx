@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, Send, Bot, User, Sparkles, Loader2, Volume2, VolumeX, Image as ImageIcon, X } from 'lucide-react';
+import { Mic, Send, Bot, User, Sparkles, Loader2, Volume2, VolumeX, Image as ImageIcon, X, Command } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { askPawasAI } from '@/lib/gemini';
 import { supabase } from '@/lib/supabase';
@@ -68,7 +68,7 @@ const AssistantPage = () => {
       );
       
       const cleanText = response.replace(/<action>[\s\S]*?<\/action>/g, '').trim();
-      const assistantMsg = cleanText || "Gambar telah saya analisis.";
+      const assistantMsg = cleanText || "Data telah saya proses.";
       
       setMessages(prev => [...prev, { role: 'assistant', text: assistantMsg }]);
       speak(assistantMsg);
@@ -109,82 +109,83 @@ const AssistantPage = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-160px)]">
-      <header className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <Sparkles className="text-emerald-400" size={20} />
-          <h1 className="text-xl font-bold text-white">Neural Assistant</h1>
+    <div className="flex flex-col h-[calc(100vh-120px)] max-w-2xl mx-auto">
+      <header className="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
+        <div className="flex items-center gap-2 text-zinc-500 text-xs font-medium uppercase tracking-widest">
+          <span>Workspace</span>
+          <span>/</span>
+          <span className="text-zinc-200">Neural Assistant</span>
         </div>
-        <button onClick={() => setIsMuted(!isMuted)} className="p-2 bg-zinc-900 rounded-xl text-zinc-500">
+        <button onClick={() => setIsMuted(!isMuted)} className="p-2 text-zinc-600 hover:text-zinc-300 transition-colors">
           {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
         </button>
       </header>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-8 pr-2 custom-scrollbar">
         <AnimatePresence>
           {messages.map((msg, i) => (
             <motion.div
-              initial={{ opacity: 0, x: msg.role === 'user' ? 20 : -20 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
               key={i}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              className="flex gap-4 group"
             >
-              <div className={`max-w-[85%] p-4 rounded-2xl flex flex-col gap-2 ${
-                msg.role === 'user' ? 'bg-emerald-600 text-white rounded-tr-none' : 'glass-card rounded-tl-none'
+              <div className={`w-8 h-8 rounded flex items-center justify-center flex-shrink-0 ${
+                msg.role === 'user' ? 'bg-zinc-800 text-zinc-400' : 'bg-emerald-500/10 text-emerald-400'
               }`}>
+                {msg.role === 'user' ? <User size={16} /> : <Command size={16} />}
+              </div>
+              <div className="flex-1 space-y-2">
+                <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">
+                  {msg.role === 'user' ? 'Fawwaz Ali' : 'Pawas AI'}
+                </p>
                 {msg.image && (
-                  <img src={msg.image} alt="Upload" className="rounded-lg w-full max-h-40 object-cover" />
+                  <img src={msg.image} alt="Upload" className="rounded-xl w-full max-h-60 object-cover border border-white/5 mb-2" />
                 )}
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0 mt-1">
-                    {msg.role === 'user' ? <User size={16} /> : <Bot size={16} className="text-emerald-400" />}
-                  </div>
-                  <p className="text-sm leading-relaxed">{msg.text}</p>
-                </div>
+                <p className="text-sm leading-relaxed text-zinc-300">{msg.text}</p>
               </div>
             </motion.div>
           ))}
         </AnimatePresence>
         {isLoading && (
-          <div className="flex justify-start">
-            <div className="glass-card p-4 rounded-2xl rounded-tl-none flex items-center gap-2">
-              <Loader2 className="animate-spin text-emerald-400" size={16} />
-              <span className="text-xs text-zinc-500">Menganalisis data...</span>
+          <div className="flex gap-4">
+            <div className="w-8 h-8 rounded bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+              <Loader2 className="animate-spin" size={16} />
             </div>
+            <p className="text-xs text-zinc-600 italic mt-2">Thinking...</p>
           </div>
         )}
       </div>
 
-      <div className="mt-4 space-y-2">
+      <div className="mt-8 pt-4 border-t border-white/5">
         {selectedImage && (
-          <div className="relative inline-block">
+          <div className="relative inline-block mb-4">
             <img src={selectedImage} alt="Preview" className="h-20 w-20 object-cover rounded-xl border border-emerald-500" />
-            <button 
-              onClick={() => setSelectedImage(null)}
-              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
-            >
+            <button onClick={() => setSelectedImage(null)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg">
               <X size={12} />
             </button>
           </div>
         )}
         
-        <div className="flex gap-2 items-center bg-[#111111] border border-white/10 rounded-2xl p-2 pl-4">
-          <input 
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSend(input)}
-            placeholder="Ketik, suara, atau kirim foto..."
-            className="flex-1 bg-transparent border-none outline-none text-sm text-white"
-          />
-          <input type="file" ref={fileInputRef} onChange={handleImageSelect} accept="image/*" className="hidden" />
-          <button onClick={() => fileInputRef.current?.click()} className="p-2 text-zinc-400 hover:text-white">
-            <ImageIcon size={20} />
-          </button>
-          <button onClick={startListening} className={`p-2 rounded-xl ${isListening ? 'bg-red-500/20 text-red-400 animate-pulse' : 'text-zinc-400'}`}>
-            <Mic size={20} />
-          </button>
-          <button onClick={() => handleSend(input)} disabled={(!input.trim() && !selectedImage) || isLoading} className="p-2 bg-emerald-600 text-white rounded-xl">
-            <Send size={20} />
+        <div className="flex gap-3 items-center">
+          <div className="flex-1 flex gap-2 items-center bg-[#0b0b0b] rounded-xl px-3 py-1.5 border border-white/5 focus-within:border-zinc-700 transition-all">
+            <input 
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend(input)}
+              placeholder="Type or use voice command..."
+              className="flex-1 bg-transparent border-none outline-none text-sm text-zinc-300 placeholder:text-zinc-700 py-1"
+            />
+            <input type="file" ref={fileInputRef} onChange={handleImageSelect} accept="image/*" className="hidden" />
+            <button onClick={() => fileInputRef.current?.click()} className="p-1.5 text-zinc-600 hover:text-zinc-300 transition-colors">
+              <ImageIcon size={18} />
+            </button>
+            <button onClick={startListening} className={`p-1.5 rounded-lg ${isListening ? 'bg-red-500/20 text-red-400 animate-pulse' : 'text-zinc-600'}`}>
+              <Mic size={18} />
+            </button>
+          </div>
+          <button onClick={() => handleSend(input)} disabled={(!input.trim() && !selectedImage) || isLoading} className="p-2.5 bg-white text-black rounded-xl hover:bg-zinc-200 transition-all active:scale-95 disabled:opacity-50">
+            <Send size={18} />
           </button>
         </div>
       </div>
