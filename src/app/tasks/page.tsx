@@ -10,7 +10,12 @@ const TasksPage = () => {
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newTask, setNewTask] = useState({ title: '', matkul: '', deadline: '' });
+  const [newTask, setNewTask] = useState<{title: string, matkul: string, deadline: string, status: 'pending' | 'completed'}>({ 
+    title: '', 
+    matkul: '', 
+    deadline: '',
+    status: 'pending'
+  });
 
   const fetchTasks = async () => {
     setLoading(true);
@@ -55,7 +60,7 @@ const TasksPage = () => {
       setTasks([{ id: Date.now(), ...taskData }, ...tasks]);
     }
     setIsModalOpen(false);
-    setNewTask({ title: '', matkul: '', deadline: '' });
+    setNewTask({ title: '', matkul: '', deadline: '', status: 'pending' });
   };
 
   return (

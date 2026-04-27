@@ -11,7 +11,12 @@ const InventoryPage = () => {
   const [stock, setStock] = useState<Inventory[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newItem, setNewItem] = useState({ unit: '', buy_price: 0, sell_price: 0, status: 'ready' });
+  const [newItem, setNewItem] = useState<{unit: string, buy_price: number, sell_price: number, status: 'ready' | 'sold'}>({ 
+    unit: '', 
+    buy_price: 0, 
+    sell_price: 0, 
+    status: 'ready' 
+  });
 
   const fetchInventory = async () => {
     setLoading(true);
