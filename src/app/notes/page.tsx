@@ -360,16 +360,14 @@ const NotesPage = () => {
 
               <div 
                 className="text-lg md:text-xl text-zinc-400 leading-relaxed outline-none min-h-[400px] font-medium custom-html-content"
-
                 contentEditable 
                 suppressContentEditableWarning
                 onBlur={(e) => {
                   const newContent = e.currentTarget.innerHTML;
                   updateNote(activeNote, { content: newContent });
                 }}
-              >
-                {notes.find(n => n.id === activeNote)?.content}
-              </div>
+                dangerouslySetInnerHTML={{ __html: notes.find(n => n.id === activeNote)?.content || '' }}
+              />
             </div>
 
             <div className="mt-auto py-6 border-t border-white/5 flex items-center justify-between bg-black/50 backdrop-blur-xl">
