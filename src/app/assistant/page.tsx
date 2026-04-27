@@ -120,6 +120,16 @@ const AssistantPage = () => {
     recognition.start();
   };
 
+  const toggleMute = () => {
+    setIsMuted(prev => {
+      const newState = !prev;
+      if (newState && typeof window !== 'undefined') {
+        window.speechSynthesis.cancel(); // Stop speaking immediately if muted
+      }
+      return newState;
+    });
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-120px)] max-w-2xl mx-auto">
       <header className="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
@@ -128,8 +138,17 @@ const AssistantPage = () => {
           <span>/</span>
           <span className="text-zinc-200">Neural Assistant</span>
         </div>
-        <button onClick={() => setIsMuted(!isMuted)} className="p-2 text-zinc-600 hover:text-zinc-300 transition-colors">
-          {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+        <button 
+          onClick={toggleMute} 
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border ${
+            isMuted ? 'bg-white/5 border-white/10 text-zinc-500' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+          }`}
+        >
+          {isMuted ? (
+            <><VolumeX size={14} /> Voice Off</>
+          ) : (
+            <><Volume2 size={14} /> Voice On</>
+          )}
         </button>
       </header>
 
