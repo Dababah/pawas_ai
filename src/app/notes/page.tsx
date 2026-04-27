@@ -1,29 +1,54 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileText, Plus, Search, MoreVertical, Hash, List, Type, Image as ImageIcon, Layout, ArrowLeft, Sparkles, Clock, Star, Share2, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/lib/supabase';
 
 const NotesPage = () => {
   const [activeNote, setActiveNote] = useState<number | null>(null);
+  const [notes, setNotes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('All');
   
-  const [notes, setNotes] = useState([
-    { id: 1, title: 'IT Study: RSA Algorithm', icon: '🎓', category: 'Kuliah', content: 'RSA is an asymmetric cryptography algorithm that is widely used for secure data transmission. It is based on the mathematical difficulty of factoring the product of two large prime numbers. The security of RSA relies on the fact that while it is easy to multiply two large prime numbers together, it is extremely difficult to reverse the process...' },
-    { id: 2, title: 'Business Plan: Core Pawas 2026', icon: '🚀', category: 'Bisnis', content: 'Expanding to high-end gadgets market in Southeast Asia. Our core value proposition remains transparency and premium service. Key milestones include opening a flagship experience center and integrating AI-driven inventory management.' },
-    { id: 3, title: 'Trading Strategy: SMC M15', icon: '📉', category: 'Trading', content: 'Focus on Liquidity Grab and Break of Market Structure (BMS). Using M15 for bias and M1 for refined entries. Risk management remains the top priority with a strict 1:3 RR ratio on every execution.' },
-  ]);
+  const fetchNotes = async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from('notes').select('*').order('id', { ascending: false });
+    if (data && data.length > 0) {
+      setNotes(data);
+    } else {
+      setNotes([
+        { id: 1, title: 'IT Study: RSA Algorithm', icon: '🎓', category: 'Kuliah', content: 'RSA is an asymmetric cryptography algorithm...' },
+        { id: 2, title: 'Business Plan: Core Pawas', icon: '🚀', category: 'Bisnis', content: 'Expanding to high-end gadgets market...' },
+        { id: 3, title: 'Trading Strategy', icon: '📉', category: 'Trading', content: 'Focus on Liquidity Grab and Break of Market Structure.' },
+      ]);
+    }
+    setLoading(false);
+  };
 
-  const addNewNote = () => {
-    const newId = notes.length + 1;
+  useEffect(() => {
+    fetchNotes();
+  }, []);
+
+  const tabs = ['All', 'Kuliah', 'Bisnis', 'Trading', 'Personal'];
+  const filteredNotes = activeTab === 'All' ? notes : notes.filter(n => n.category?.toLowerCase() === activeTab.toLowerCase());
+
+  const addNewNote = async () => {
     const newNote = {
-      id: newId,
       title: 'Untitled Note',
       icon: '📝',
-      category: 'General',
+      category: activeTab === 'All' ? 'Personal' : activeTab,
       content: 'Start writing your neural notes here...'
     };
-    setNotes([newNote, ...notes]);
-    setActiveNote(newId);
+    const { data, error } = await supabase.from('notes').insert([newNote]).select();
+    if (data) {
+      setNotes([data[0], ...notes]);
+      setActiveNote(data[0].id);
+    } else {
+      const mockId = Date.now();
+      setNotes([{ id: mockId, ...newNote }, ...notes]);
+      setActiveNote(mockId);
+    }
   };
 
   const handleEditorCommand = (command: string, value?: string) => {
@@ -47,11 +72,17 @@ const NotesPage = () => {
     input.click();
   };
 
-  const deleteNote = (id: number) => {
+  const deleteNote = async (id: number) => {
     if (confirm('Hapus catatan ini secara permanen?')) {
+      await supabase.from('notes').delete().eq('id', id);
       setNotes(prev => prev.filter(n => n.id !== id));
       setActiveNote(null);
     }
+  };
+
+  const updateNote = async (id: number, updates: any) => {
+    setNotes(prev => prev.map(n => n.id === id ? { ...n, ...updates } : n));
+    await supabase.from('notes').update(updates).eq('id', id);
   };
 
   const shareNote = () => {
@@ -113,14 +144,32 @@ const NotesPage = () => {
               </button>
             </header>
 
-            <motion.div variants={itemVariants} className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-white transition-colors" size={18} />
-              <input 
-                type="text" 
-                placeholder="Search across all pages..."
-                className="w-full bg-zinc-950/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-white/10 focus:bg-zinc-900/50 transition-all placeholder:text-zinc-700"
-              />
-            </motion.div>
+            <div className="flex flex-col gap-4">
+              <motion.div variants={itemVariants} className="relative group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-[#8c7851] transition-colors" size={18} />
+                <input 
+                  type="text" 
+                  placeholder="Search your neural network..."
+                  className="w-full bg-zinc-950/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-[#8c7851]/50 focus:bg-[#8c7851]/5 transition-all placeholder:text-zinc-700"
+                />
+              </motion.div>
+
+              <motion.div variants={itemVariants} className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                {tabs.map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all ${
+                      activeTab === tab 
+                        ? 'bg-[#8c7851] text-[#f0ede4] shadow-lg shadow-[#8c7851]/20' 
+                        : 'bg-white/5 text-zinc-500 hover:bg-white/10 hover:text-zinc-300'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </motion.div>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <section className="space-y-4">
@@ -129,37 +178,43 @@ const NotesPage = () => {
                   <Star size={12} className="text-zinc-800" />
                 </div>
                 <div className="grid gap-3">
-                  {notes.map((note) => (
-                    <motion.button
-                      key={note.id}
-                      variants={itemVariants}
-                      onClick={() => setActiveNote(note.id)}
-                      className="w-full glass-panel p-5 flex items-center justify-between group hover:border-white/10 transition-all"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                          {note.icon}
-                        </div>
-                        <div className="text-left">
-                          <p className="text-sm font-bold text-zinc-100 group-hover:text-white transition-colors">{note.title}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-tighter">{note.category}</span>
-                            <span className="w-1 h-1 rounded-full bg-zinc-800" />
-                            <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-tighter">Updated 2h ago</span>
+                  {filteredNotes.length === 0 ? (
+                    <div className="text-center py-12 bg-white/5 rounded-2xl border border-dashed border-white/10">
+                      <p className="text-zinc-500 text-sm font-medium">No notes found in '{activeTab}'.</p>
+                    </div>
+                  ) : (
+                    filteredNotes.map((note) => (
+                      <motion.button
+                        key={note.id}
+                        variants={itemVariants}
+                        onClick={() => setActiveNote(note.id)}
+                        className="w-full glass-panel p-5 flex items-center justify-between group hover:border-[#8c7851]/30 transition-all"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform group-hover:bg-[#8c7851]/10">
+                            {note.icon}
+                          </div>
+                          <div className="text-left">
+                            <p className="text-sm font-bold text-zinc-100 group-hover:text-white transition-colors">{note.title}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-[10px] text-[#8c7851] font-bold uppercase tracking-tighter bg-[#8c7851]/10 px-2 py-0.5 rounded-full">{note.category}</span>
+                              <span className="w-1 h-1 rounded-full bg-zinc-800" />
+                              <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-tighter">Saved in Neural Base</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteNote(note.id);
-                        }}
-                        className="p-2 text-zinc-800 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </motion.button>
-                  ))}
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteNote(note.id);
+                          }}
+                          className="p-2 text-zinc-800 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </motion.button>
+                    ))
+                  )}
                 </div>
               </section>
 
@@ -234,7 +289,7 @@ const NotesPage = () => {
                   suppressContentEditableWarning
                   onBlur={(e) => {
                     const newTitle = e.currentTarget.textContent || '';
-                    setNotes(prev => prev.map(n => n.id === activeNote ? { ...n, title: newTitle } : n));
+                    updateNote(activeNote, { title: newTitle });
                   }}
                 >
                   {notes.find(n => n.id === activeNote)?.title}
@@ -260,7 +315,7 @@ const NotesPage = () => {
                 suppressContentEditableWarning
                 onBlur={(e) => {
                   const newContent = e.currentTarget.innerHTML;
-                  setNotes(prev => prev.map(n => n.id === activeNote ? { ...n, content: newContent } : n));
+                  updateNote(activeNote, { content: newContent });
                 }}
               >
                 {notes.find(n => n.id === activeNote)?.content}

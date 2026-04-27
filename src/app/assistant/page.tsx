@@ -8,9 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { scheduleTaskNotification } from '@/lib/notifications';
 
 const AssistantPage = () => {
-  const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; text: string; image?: string }[]>([
-    { role: 'assistant', text: 'Halo Fawwaz. Ada yang bisa saya bantu catat atau analisis hari ini?' }
-  ]);
+  const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; text: string; image?: string }[]>([]);
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -20,8 +18,26 @@ const AssistantPage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    // Load from local storage on initial render
+    const saved = localStorage.getItem('pawas_ai_chat');
+    if (saved) {
+      try {
+        setMessages(JSON.parse(saved));
+      } catch (e) {
+        setMessages([{ role: 'assistant', text: 'Halo Fawwaz. Ada yang bisa saya bantu catat atau analisis hari ini?' }]);
+      }
+    } else {
+      setMessages([{ role: 'assistant', text: 'Halo Fawwaz. Ada yang bisa saya bantu catat atau analisis hari ini?' }]);
+    }
+  }, []);
+
+  useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+    // Save to local storage whenever messages change
+    if (messages.length > 0) {
+      localStorage.setItem('pawas_ai_chat', JSON.stringify(messages));
     }
   }, [messages]);
 
@@ -78,13 +94,16 @@ const AssistantPage = () => {
         const actionMatch = response.match(/<action>([\s\S]*?)<\/action>/);
         if (actionMatch) {
           try {
-            const { action, data } = JSON.parse(actionMatch[1]);
+            // Remove markdown code blocks if AI added them inside the tag
+            const cleanJsonString = actionMatch[1].replace(/```json/g, '').replace(/```/g, '').trim();
+            const { action, data } = JSON.parse(cleanJsonString);
+            
             if (action === 'save_task') {
-              await supabase.from('tasks').insert([data]);
+              await supabase.from('tasks').insert([{...data, status: 'pending'}]);
               if (data.deadline) await scheduleTaskNotification(data.title, data.deadline);
             }
             else if (action === 'save_inventory') {
-              await supabase.from('inventory').insert([data]);
+              await supabase.from('inventory').insert([{...data, status: 'ready'}]);
             }
             else if (action === 'log_biz_sale') {
               await supabase.from('sales').insert([data]);
@@ -96,7 +115,7 @@ const AssistantPage = () => {
               await supabase.from('notes').insert([data]);
             }
           } catch (e) {
-            console.error('Database action failed', e);
+            console.error('Database action failed or Invalid JSON', e);
           }
         }
       }
