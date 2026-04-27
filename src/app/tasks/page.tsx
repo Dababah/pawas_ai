@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Clock, CheckCircle2, Circle, AlertCircle, Plus, Calendar, Filter, ArrowLeft, Trash2 } from 'lucide-react';
+import { Clock, CheckCircle2, Circle, AlertCircle, Plus, Calendar, Filter, ArrowLeft, Trash2, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
@@ -9,13 +9,6 @@ import Link from 'next/link';
 const TasksPage = () => {
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newTask, setNewTask] = useState<{title: string, matkul: string, deadline: string, status: 'pending' | 'completed'}>({ 
-    title: '', 
-    matkul: '', 
-    deadline: '',
-    status: 'pending'
-  });
 
   const fetchTasks = async () => {
     setLoading(true);
@@ -47,20 +40,6 @@ const TasksPage = () => {
     }
   };
 
-  const addTask = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const taskData = { ...newTask, status: 'pending', created_at: new Date().toISOString() };
-    const { data, error } = await supabase.from('tasks').insert([taskData]).select();
-    
-    if (data) {
-      setTasks([data[0], ...tasks]);
-    } else {
-      // Mock local addition
-      setTasks([{ id: Date.now(), ...taskData }, ...tasks]);
-    }
-    setIsModalOpen(false);
-    setNewTask({ title: '', matkul: '', deadline: '', status: 'pending' });
-  };
 
   return (
     <div className="space-y-8 pb-20">
@@ -76,13 +55,13 @@ const TasksPage = () => {
           <h1 className="text-3xl md:text-4xl font-black text-[#f0ede4] font-outfit tracking-tight">Deadlines & Tasks</h1>
         </div>
         
-        <button 
-          onClick={() => setIsModalOpen(true)}
+        <Link 
+          href="/assistant"
           className="flex items-center gap-2 px-5 py-2.5 bg-[#f0ede4] text-[#0d1a15] rounded-xl text-sm font-bold hover:bg-[#8c7851] hover:text-[#f0ede4] transition-all shadow-xl"
         >
-          <Plus size={18} />
-          <span>Add Task</span>
-        </button>
+          <Sparkles size={18} className="text-orange-500" />
+          <span>Ask Neural AI</span>
+        </Link>
       </header>
 
       <div className="grid gap-4">
@@ -136,76 +115,6 @@ const TasksPage = () => {
           </motion.div>
         ))}
       </div>
-
-      {/* Add Task Modal */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsModalOpen(false)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md glass-panel p-8 space-y-6"
-            >
-              <h2 className="text-2xl font-black text-white font-outfit">New Task Node</h2>
-              <form onSubmit={addTask} className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest px-1">Task Title</label>
-                  <input 
-                    required
-                    value={newTask.title}
-                    onChange={(e) => setNewTask({...newTask, title: e.target.value})}
-                    placeholder="e.g. RSA Algorithm Implementation"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white outline-none focus:border-[#4a6741] transition-all"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest px-1">Subject / Project</label>
-                  <input 
-                    required
-                    value={newTask.matkul}
-                    onChange={(e) => setNewTask({...newTask, matkul: e.target.value})}
-                    placeholder="e.g. Cryptography"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white outline-none focus:border-[#4a6741] transition-all"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest px-1">Deadline Date</label>
-                  <input 
-                    required
-                    type="datetime-local"
-                    value={newTask.deadline}
-                    onChange={(e) => setNewTask({...newTask, deadline: e.target.value})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white outline-none focus:border-[#4a6741] transition-all"
-                  />
-                </div>
-                <div className="pt-4 flex gap-3">
-                  <button 
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="flex-1 py-3 border border-white/10 text-white rounded-xl text-sm font-bold hover:bg-white/5 transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    type="submit"
-                    className="flex-1 py-3 bg-[#f0ede4] text-[#0d1a15] rounded-xl text-sm font-bold hover:bg-[#4a6741] hover:text-white transition-all"
-                  >
-                    Add Task
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
