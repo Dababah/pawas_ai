@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Package, Plus, Smartphone, Trash2, RefreshCw, FileDown } from 'lucide-react';
+import { Package, Plus, Smartphone, Trash2, RefreshCw, FileDown, Activity, DollarSign, ArrowUpRight, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { bizSupabase, Inventory } from '@/lib/supabase';
 import jsPDF from 'jspdf';
@@ -59,76 +59,164 @@ const InventoryPage = () => {
     doc.save(`Laporan_Inventaris_PawasAI_${new Date().toISOString().slice(0,10)}.pdf`);
   };
 
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.05 }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 10 },
+    show: { opacity: 1, y: 0 }
+  };
+
   return (
-    <div className="space-y-6">
-      <header className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-2">
-          <Package className="text-purple-400" size={24} />
-          <h1 className="text-xl font-bold text-white">Core Pawas Inventory</h1>
+    <motion.div 
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="space-y-8 pb-20"
+    >
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-zinc-500 text-[10px] font-bold uppercase tracking-[0.3em]">
+            <Package size={12} className="text-purple-500" />
+            <span>Business Assets</span>
+          </div>
+          <h1 className="text-3xl md:text-4xl font-black text-white font-outfit tracking-tight">Core Inventory</h1>
         </div>
-        <div className="flex gap-2">
-          <button onClick={exportToPDF} className="p-2 bg-zinc-800 border border-zinc-700 rounded-xl text-emerald-400">
-            <FileDown size={18} />
+        
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={exportToPDF} 
+            className="flex items-center gap-2 px-4 py-2.5 bg-zinc-900 border border-white/5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all shadow-xl"
+          >
+            <FileDown size={16} />
+            <span className="hidden sm:inline">Export PDF</span>
           </button>
-          <button onClick={fetchInventory} className="p-2 bg-zinc-800 border border-zinc-700 rounded-xl text-zinc-400">
+          <button 
+            onClick={fetchInventory} 
+            className="p-2.5 bg-zinc-900 border border-white/5 rounded-xl text-zinc-400 hover:text-white transition-all shadow-xl"
+          >
             <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
           </button>
           <button 
             onClick={() => window.location.href = '/assistant'} 
-            className="p-2 bg-white text-black rounded-xl hover:bg-zinc-200 transition-all"
+            className="flex items-center gap-2 px-5 py-2.5 bg-white text-black rounded-xl text-sm font-bold hover:bg-zinc-200 transition-all shadow-xl"
           >
             <Plus size={18} />
+            <span>Add Unit</span>
           </button>
         </div>
       </header>
 
-      <div className="grid gap-4">
-        {loading && stock.length === 0 ? (
-          <div className="text-center py-10 text-zinc-600 text-sm">Memuat data dari Supabase...</div>
-        ) : (
-          <AnimatePresence>
-            {stock.map((item, i) => (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                key={item.id}
-                className="glass-card p-4 flex items-center justify-between group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
-                    <Smartphone size={20} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-white">{item.unit}</p>
-                    <p className="text-xs text-zinc-500">Buy: {item.buy_price} • Target: {item.sell_price}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase ${
-                    item.status === 'ready' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-zinc-800 text-zinc-500'
-                  }`}>
-                    {item.status}
-                  </span>
-                  <button 
-                    onClick={() => item.id && deleteItem(item.id)}
-                    className="opacity-0 group-hover:opacity-100 p-1.5 text-zinc-600 hover:text-red-500 transition-all"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        )}
-        {!loading && stock.length === 0 && (
-          <div className="text-center py-20 border-2 border-dashed border-zinc-900 rounded-3xl">
-            <p className="text-zinc-600 text-sm">Stok kosong. Gunakan AI untuk menambah unit.</p>
-          </div>
-        )}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Units', val: stock.length, sub: 'In Warehouse', icon: <Package size={14} />, color: 'text-white' },
+          { label: 'Est. Revenue', val: `Rp ${(stock.reduce((acc, i) => acc + i.sell_price, 0) / 1000000).toFixed(1)}M`, sub: 'Projected', icon: <DollarSign size={14} />, color: 'text-emerald-400' },
+          { label: 'Avg Margin', val: 'Rp 850K', sub: 'Per Unit', icon: <Activity size={14} />, color: 'text-blue-400' },
+          { label: 'Ready Stock', val: stock.filter(s => s.status === 'ready').length, sub: 'Units', icon: <Smartphone size={14} />, color: 'text-purple-400' },
+        ].map((stat, idx) => (
+          <motion.div key={idx} variants={item} className="glass-panel p-4 flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-zinc-500">
+              {stat.icon}
+              <span className="text-[10px] font-bold uppercase tracking-wider">{stat.label}</span>
+            </div>
+            <p className={`text-xl font-bold ${stat.color} font-outfit`}>{stat.val}</p>
+            <p className="text-[9px] text-zinc-600 font-bold uppercase">{stat.sub}</p>
+          </motion.div>
+        ))}
       </div>
-    </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between px-1">
+          <h2 className="text-xs font-bold text-zinc-500 uppercase tracking-[0.2em]">Inventory Log</h2>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 mr-4">
+              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span className="text-[9px] text-zinc-500 font-bold uppercase">Ready</span>
+            </div>
+            <span className="text-[10px] text-zinc-600 font-bold uppercase">{stock.length} Total Units</span>
+          </div>
+        </div>
+
+        <div className="grid gap-3">
+          {loading && stock.length === 0 ? (
+            <div className="text-center py-20 bg-zinc-950/50 rounded-3xl border border-white/5">
+              <div className="w-10 h-10 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-zinc-500 text-sm font-medium">Syncing warehouse data...</p>
+            </div>
+          ) : (
+            <AnimatePresence mode="popLayout">
+              {stock.map((item, i) => (
+                <motion.div
+                  variants={item}
+                  initial="hidden"
+                  animate="show"
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  key={item.id}
+                  className="glass-panel p-5 flex items-center justify-between group hover:bg-white/[0.02] transition-all"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-zinc-400 group-hover:scale-110 transition-transform group-hover:bg-purple-500/10 group-hover:text-purple-400">
+                      <Smartphone size={24} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-bold text-white tracking-tight">{item.unit}</p>
+                        {item.status === 'ready' && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 mt-1">
+                        <div className="flex items-center gap-1">
+                          <span className="text-[9px] text-zinc-600 font-bold uppercase">Buy:</span>
+                          <span className="text-[10px] text-zinc-400 font-medium font-outfit">Rp {item.buy_price.toLocaleString('id-ID')}</span>
+                        </div>
+                        <div className="w-1 h-1 rounded-full bg-zinc-800" />
+                        <div className="flex items-center gap-1">
+                          <span className="text-[9px] text-zinc-600 font-bold uppercase">Target:</span>
+                          <span className="text-[10px] text-emerald-400 font-bold font-outfit">Rp {item.sell_price.toLocaleString('id-ID')}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="hidden sm:flex flex-col items-end">
+                      <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Expected Margin</p>
+                      <p className="text-xs font-bold text-white font-outfit">+Rp {(item.sell_price - item.buy_price).toLocaleString('id-ID')}</p>
+                    </div>
+                    <button 
+                      onClick={() => item.id && deleteItem(item.id)}
+                      className="p-2.5 hover:bg-red-500/10 hover:text-red-500 text-zinc-700 rounded-xl transition-all"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          )}
+
+          {!loading && stock.length === 0 && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-20 bg-zinc-950/30 border border-dashed border-white/5 rounded-[2rem]"
+            >
+              <Package size={40} className="mx-auto text-zinc-800 mb-4" />
+              <p className="text-zinc-600 text-sm font-medium">No units found in your digital warehouse.</p>
+              <p className="text-zinc-700 text-[10px] uppercase font-bold tracking-widest mt-2">Initialize supply via neural assistant</p>
+            </motion.div>
+          )}
+        </div>
+      </div>
+    </motion.div>
   );
 };
 
 export default InventoryPage;
+

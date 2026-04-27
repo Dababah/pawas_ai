@@ -1,75 +1,128 @@
 'use client';
 
 import React from 'react';
-import { Home, FileText, TrendingUp, Globe, MessageSquare, Plus, Search, Settings, HelpCircle } from 'lucide-react';
+import { Home, FileText, TrendingUp, Globe, MessageSquare, Search, Settings, HelpCircle, LayoutGrid } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { motion } from 'framer-motion';
 
 const Sidebar = () => {
   const pathname = usePathname();
 
   const menuItems = [
-    { icon: <Home size={18} />, label: 'Dashboard', path: '/' },
-    { icon: <FileText size={18} />, label: 'Workspace', path: '/notes' },
-    { icon: <TrendingUp size={18} />, label: 'Trading', path: '/trading' },
-    { icon: <Globe size={18} />, label: 'Web Apps', path: '/web' },
-    { icon: <MessageSquare size={18} />, label: 'AI Assistant', path: '/assistant' },
+    { icon: <Home size={20} />, label: 'Dashboard', path: '/' },
+    { icon: <FileText size={20} />, label: 'Workspace', path: '/notes' },
+    { icon: <TrendingUp size={20} />, label: 'Trading', path: '/trading' },
+    { icon: <Globe size={20} />, label: 'Web Apps', path: '/web' },
+    { icon: <MessageSquare size={20} />, label: 'AI Assistant', path: '/assistant' },
   ];
 
   return (
     <>
-      {/* Desktop Sidebar (Notion Style) */}
-      <aside className="hidden md:flex flex-col w-64 h-screen bg-[#0b0b0b] border-r border-white/5 p-4 fixed left-0 top-0 z-50">
-        <div className="flex items-center gap-3 px-2 mb-8">
-          <div className="w-8 h-8 rounded bg-white/10 flex items-center justify-center font-bold text-white text-xs">P</div>
-          <span className="font-semibold text-zinc-200 text-sm">Pawas.ai</span>
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex flex-col w-64 h-screen bg-zinc-950/50 backdrop-blur-xl border-r border-white/5 p-6 fixed left-0 top-0 z-50">
+        <div className="flex items-center gap-3 px-2 mb-10">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-white to-zinc-400 flex items-center justify-center shadow-lg shadow-white/10">
+            <LayoutGrid size={20} className="text-black" />
+          </div>
+          <div>
+            <span className="font-bold text-white text-lg block leading-none">Pawas.ai</span>
+            <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Neural System</span>
+          </div>
         </div>
 
-        <div className="space-y-1">
-          <button className="w-full flex items-center gap-3 px-3 py-1.5 text-zinc-500 hover:bg-white/5 rounded-md text-sm transition-colors mb-4">
-            <Search size={16} /> Search
+        <div className="space-y-2">
+          <button className="w-full flex items-center gap-3 px-4 py-2 text-zinc-500 hover:bg-white/5 rounded-xl text-sm transition-all group mb-6 border border-transparent hover:border-white/5">
+            <Search size={18} className="group-hover:text-white transition-colors" />
+            <span className="group-hover:text-white transition-colors">Quick Search</span>
+            <kbd className="ml-auto text-[10px] bg-zinc-900 px-1.5 py-0.5 rounded border border-white/10 text-zinc-600">⌘K</kbd>
           </button>
           
-          {menuItems.map((item) => (
-            <Link
-              key={item.path}
-              href={item.path}
-              className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-all ${
-                pathname === item.path ? 'bg-white/5 text-white font-medium' : 'text-zinc-500 hover:bg-white/5'
-              }`}
-            >
-              {item.icon}
-              {item.label}
-            </Link>
-          ))}
+          <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest px-4 mb-4">Main Menu</div>
+          
+          {menuItems.map((item) => {
+            const isActive = pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                href={item.path}
+                className={`group relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all ${
+                  isActive 
+                    ? 'text-white' 
+                    : 'text-zinc-500 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                {isActive && (
+                  <motion.div 
+                    layoutId="active-pill"
+                    className="absolute inset-0 bg-white/5 border border-white/10 rounded-xl"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <span className={`relative z-10 ${isActive ? 'text-white' : 'group-hover:text-white'}`}>
+                  {item.icon}
+                </span>
+                <span className="relative z-10 font-medium">{item.label}</span>
+                {isActive && (
+                  <motion.div 
+                    layoutId="active-dot"
+                    className="absolute right-4 w-1.5 h-1.5 bg-white rounded-full"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+              </Link>
+            );
+          })}
         </div>
 
-        <div className="mt-auto space-y-1">
-          <button className="w-full flex items-center gap-3 px-3 py-1.5 text-zinc-500 hover:bg-white/5 rounded-md text-sm">
-            <Settings size={16} /> Settings
+        <div className="mt-auto pt-6 border-t border-white/5 space-y-1">
+          <button className="w-full flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-white hover:bg-white/5 rounded-xl text-sm transition-all">
+            <Settings size={18} />
+            <span className="font-medium">Settings</span>
           </button>
-          <button className="w-full flex items-center gap-3 px-3 py-1.5 text-zinc-500 hover:bg-white/5 rounded-md text-sm">
-            <HelpCircle size={16} /> Help
+          <button className="w-full flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-white hover:bg-white/5 rounded-xl text-sm transition-all">
+            <HelpCircle size={18} />
+            <span className="font-medium">Support</span>
           </button>
         </div>
       </aside>
 
-      {/* Mobile/Tablet Bottom Nav (Refined) */}
-      <nav className="md:hidden fixed bottom-6 left-6 right-6 h-16 bg-[#111111]/90 backdrop-blur-xl border border-white/10 rounded-3xl flex justify-around items-center px-4 z-50 shadow-2xl">
-        {menuItems.map((item) => (
-          <Link
-            key={item.path}
-            href={item.path}
-            className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all ${
-              pathname === item.path ? 'bg-white/5 text-white' : 'text-zinc-500'
-            }`}
-          >
-            {item.icon}
-          </Link>
-        ))}
+      {/* Mobile/Tablet Bottom Nav */}
+      <nav className="md:hidden fixed bottom-6 left-6 right-6 h-20 bg-zinc-950/80 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] flex justify-around items-center px-4 z-50 shadow-2xl premium-shadow">
+        {menuItems.map((item) => {
+          const isActive = pathname === item.path;
+          return (
+            <Link
+              key={item.path}
+              href={item.path}
+              className={`relative flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all ${
+                isActive ? 'text-white' : 'text-zinc-500'
+              }`}
+            >
+              {isActive && (
+                <motion.div 
+                  layoutId="mobile-active-pill"
+                  className="absolute inset-0 bg-white/10 border border-white/10 rounded-2xl"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <span className="relative z-10">
+                {React.cloneElement(item.icon as React.ReactElement, { size: 22 })}
+              </span>
+              {isActive && (
+                <motion.span 
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -bottom-1 w-1 h-1 bg-white rounded-full"
+                />
+              )}
+            </Link>
+          );
+        })}
       </nav>
     </>
   );
 };
 
 export default Sidebar;
+

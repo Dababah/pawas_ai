@@ -1,34 +1,97 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", "Geist Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-sans: "Inter", "Geist Sans", ui-sans-serif, system-ui, sans-serif;
   --color-background: #000000;
   --color-foreground: #ffffff;
-  --color-card: #111111;
-  --color-accent: #3f3f46;
-  --color-emerald-light: #10b981;
+  --color-card: #0a0a0a;
+  --color-accent: #18181b;
+  --color-border: rgba(255, 255, 255, 0.08);
+  
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
 }
 
 :root {
   --background: #000000;
-  --foreground: #ffffff;
-  --card: #111111;
-  --accent: #3f3f46;
+  --foreground: #fafafa;
+  --card: #09090b;
+  --card-foreground: #fafafa;
+  --popover: #09090b;
+  --popover-foreground: #fafafa;
+  --primary: #fafafa;
+  --primary-foreground: #18181b;
+  --secondary: #27272a;
+  --secondary-foreground: #fafafa;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --accent: #27272a;
+  --accent-foreground: #fafafa;
+  --destructive: #7f1d1d;
+  --destructive-foreground: #fafafa;
+  --border: #27272a;
+  --input: #27272a;
+  --ring: #d4d4d8;
 }
 
-body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
-  overflow-x: hidden;
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
 }
 
 @layer components {
-  .glass-card {
-    @apply bg-[#111111]/80 backdrop-blur-md border border-white/10 rounded-2xl;
+  .glass-panel {
+    @apply bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-2xl;
   }
   
-  .bottom-nav {
-    @apply fixed bottom-0 left-0 right-0 h-20 bg-black/80 backdrop-blur-lg border-t border-white/5 flex justify-around items-center px-6 z-50;
+  .glass-card {
+    @apply bg-zinc-900/50 backdrop-blur-md border border-white/10 rounded-2xl transition-all duration-300 hover:bg-zinc-900/70 hover:border-white/20;
+  }
+
+  .nav-blur {
+    @apply bg-black/60 backdrop-blur-xl border-t border-white/5;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-white to-white/40;
+  }
+
+  .premium-shadow {
+    box-shadow: 0 0 40px -10px rgba(255, 255, 255, 0.05);
   }
 }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  h1 { @apply text-3xl; }
+  .container { @apply px-4; }
+}
+
