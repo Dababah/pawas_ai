@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
+const API_KEY = "AIzaSyBgp4CNAvutmX4GfHiALPyZKX89j_B3THA";
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 export const systemPrompt = `Anda adalah Pawas.ai, asisten neural pribadi yang dibangun khusus untuk Muhammad Fawwaz Ali.
