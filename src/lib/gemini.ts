@@ -28,7 +28,7 @@ export async function askPawasAI(input: string, history: any[] = [], imageBase64
     const chatHistory = history.map(h => `${h.role === 'user' ? 'User' : 'Assistant'}: ${h.parts[0].text}`).join('\n');
     const fullPrompt = `${systemPrompt}\n\nRiwayat Percakapan:\n${chatHistory}\n\nUser: ${input}\n\nAssistant:`;
 
-    const modelUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+    const modelUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${API_KEY}`;
     
     let contents: any[] = [{
       role: "user",
@@ -55,13 +55,13 @@ export async function askPawasAI(input: string, history: any[] = [], imageBase64
     const data = await response.json();
 
     if (!response.ok) {
-      // Fallback to gemini-pro if flash fails
+      // Fallback to pro if flash fails
       if (response.status === 404) {
-        const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
+        const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=${API_KEY}`;
         const fallbackResponse = await fetch(fallbackUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: fullPrompt }] }] }) // No images for pro
+          body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: fullPrompt }] }] }) // No images for pro fallback
         });
         const fallbackData = await fallbackResponse.json();
         if (!fallbackResponse.ok) {
