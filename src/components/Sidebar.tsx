@@ -10,11 +10,11 @@ const Sidebar = () => {
   const pathname = usePathname();
 
   const menuItems = [
-    { icon: <Home size={20} />, label: 'Dashboard', path: '/' },
-    { icon: <FileText size={20} />, label: 'Workspace', path: '/notes' },
-    { icon: <TrendingUp size={20} />, label: 'Trading', path: '/trading' },
-    { icon: <Globe size={20} />, label: 'Web Apps', path: '/web' },
-    { icon: <MessageSquare size={20} />, label: 'AI Assistant', path: '/assistant' },
+    { icon: Home, label: 'Dashboard', path: '/' },
+    { icon: FileText, label: 'Workspace', path: '/notes' },
+    { icon: TrendingUp, label: 'Trading', path: '/trading' },
+    { icon: Globe, label: 'Web Apps', path: '/web' },
+    { icon: MessageSquare, label: 'AI Assistant', path: '/assistant' },
   ];
 
   return (
@@ -42,6 +42,7 @@ const Sidebar = () => {
           
           {menuItems.map((item) => {
             const isActive = pathname === item.path;
+            const Icon = item.icon;
             return (
               <Link
                 key={item.path}
@@ -60,7 +61,7 @@ const Sidebar = () => {
                   />
                 )}
                 <span className={`relative z-10 ${isActive ? 'text-white' : 'group-hover:text-white'}`}>
-                  {item.icon}
+                  <Icon size={20} />
                 </span>
                 <span className="relative z-10 font-medium">{item.label}</span>
                 {isActive && (
@@ -91,6 +92,7 @@ const Sidebar = () => {
       <nav className="md:hidden fixed bottom-6 left-6 right-6 h-20 bg-zinc-950/80 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] flex justify-around items-center px-4 z-50 shadow-2xl premium-shadow">
         {menuItems.map((item) => {
           const isActive = pathname === item.path;
+          const Icon = item.icon;
           return (
             <Link
               key={item.path}
@@ -107,7 +109,7 @@ const Sidebar = () => {
                 />
               )}
               <span className="relative z-10">
-                {React.cloneElement(item.icon as React.ReactElement, { size: 22 })}
+                <Icon size={22} />
               </span>
               {isActive && (
                 <motion.span 

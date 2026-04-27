@@ -182,9 +182,14 @@ const NotesPage = () => {
 
             <div className="mt-auto py-6 border-t border-white/5 flex items-center justify-between bg-black/50 backdrop-blur-xl">
               <div className="flex gap-2">
-                {[<Type key="t" />, <List key="l" />, <ImageIcon key="i" />, <Hash key="h" />].map((icon, idx) => (
+                {[
+                  <Type key="t" size={20} />, 
+                  <List key="l" size={20} />, 
+                  <ImageIcon key="i" size={20} />, 
+                  <Hash key="h" size={20} />
+                ].map((icon, idx) => (
                   <button key={idx} className="p-2.5 text-zinc-600 hover:text-white hover:bg-white/5 rounded-xl transition-all">
-                    {React.cloneElement(icon as React.ReactElement, { size: 20 })}
+                    {icon}
                   </button>
                 ))}
               </div>
