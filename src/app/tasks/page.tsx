@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Clock, CheckCircle2, Circle, AlertCircle, Plus, Calendar, Filter, ArrowLeft, Trash2, Sparkles, List, Layout } from 'lucide-react';
+import { Clock, CheckCircle2, Circle, AlertCircle, Plus, Calendar, Filter, ArrowLeft, Trash2, Sparkles, List, Layout, Edit2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
@@ -10,6 +10,9 @@ const TasksPage = () => {
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<'list' | 'board'>('list');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<any>(null);
+  const [formData, setFormData] = useState({ title: '', matkul: '', deadline: '' });
 
   const fetchTasks = async () => {
     setLoading(true);
@@ -41,6 +44,54 @@ const TasksPage = () => {
     }
   };
 
+  const openAddModal = () => {
+    setEditingTask(null);
+    setFormData({ title: '', matkul: '', deadline: '' });
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (task: any) => {
+    setEditingTask(task);
+    let formattedDeadline = '';
+    if (task.deadline) {
+      const d = new Date(task.deadline);
+      const offset = d.getTimezoneOffset() * 60000;
+      const localISOTime = (new Date(d.getTime() - offset)).toISOString().slice(0, 16);
+      formattedDeadline = localISOTime;
+    }
+    setFormData({ title: task.title, matkul: task.matkul || '', deadline: formattedDeadline });
+    setIsModalOpen(true);
+  };
+
+  const saveTask = async () => {
+    if (!formData.title.trim()) return alert('Judul tugas harus diisi');
+    
+    let isoDeadline = null;
+    if (formData.deadline) {
+      isoDeadline = new Date(formData.deadline).toISOString();
+    }
+
+    const payload = {
+      title: formData.title,
+      matkul: formData.matkul,
+      deadline: isoDeadline,
+      status: editingTask ? editingTask.status : 'pending'
+    };
+
+    if (editingTask) {
+      const { data, error } = await supabase.from('tasks').update(payload).eq('id', editingTask.id).select();
+      if (data) setTasks(prev => prev.map(t => t.id === editingTask.id ? data[0] : t));
+    } else {
+      const { data, error } = await supabase.from('tasks').insert([payload]).select();
+      if (data) setTasks(prev => [...prev, data[0]].sort((a,b) => {
+        if (!a.deadline) return 1;
+        if (!b.deadline) return -1;
+        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+      }));
+    }
+    setIsModalOpen(false);
+  };
+
 
   return (
     <div className="space-y-8 pb-20">
@@ -57,6 +108,13 @@ const TasksPage = () => {
         </div>
         
         <div className="flex items-center gap-3">
+          <button
+            onClick={openAddModal}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#8c7851] text-[#0d1a15] rounded-xl text-sm font-bold hover:bg-[#f0ede4] transition-all"
+          >
+            <Plus size={18} />
+            <span className="hidden sm:inline">New Task</span>
+          </button>
           <div className="flex bg-[#0d1a15] border border-white/10 rounded-xl p-1">
             <button 
               onClick={() => setView('list')}
@@ -120,15 +178,20 @@ const TasksPage = () => {
                     <span className="text-[10px] font-bold uppercase tracking-tighter">Due Soon</span>
                   </div>
                 )}
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteTask(task.id);
-                  }}
-                  className="p-2 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                >
-                  <Trash2 size={16} />
-                </button>
+                <div className="flex opacity-0 group-hover:opacity-100 transition-all gap-1">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); openEditModal(task); }}
+                    className="p-2 text-zinc-600 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
+                    className="p-2 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
             </motion.div>
           ))}
@@ -155,12 +218,14 @@ const TasksPage = () => {
                   <span className="text-[10px] text-[#8c7851] font-bold uppercase bg-[#8c7851]/10 px-2 py-0.5 rounded">
                     {task.matkul}
                   </span>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
-                    className="opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-red-400 transition-all"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  <div className="opacity-0 group-hover:opacity-100 flex gap-2 transition-all">
+                    <button onClick={(e) => { e.stopPropagation(); openEditModal(task); }} className="text-zinc-600 hover:text-blue-400">
+                      <Edit2 size={14} />
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }} className="text-zinc-600 hover:text-red-400">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
                 <h3 className="text-sm font-bold text-white mb-2">{task.title}</h3>
                 {task.deadline && (
@@ -195,12 +260,14 @@ const TasksPage = () => {
                   <span className="text-[10px] text-zinc-500 font-bold uppercase bg-white/5 px-2 py-0.5 rounded line-through">
                     {task.matkul}
                   </span>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
-                    className="opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-red-400 transition-all"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  <div className="opacity-0 group-hover:opacity-100 flex gap-2 transition-all">
+                    <button onClick={(e) => { e.stopPropagation(); openEditModal(task); }} className="text-zinc-600 hover:text-blue-400">
+                      <Edit2 size={14} />
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }} className="text-zinc-600 hover:text-red-400">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
                 <h3 className="text-sm font-bold text-zinc-500 line-through mb-2">{task.title}</h3>
               </motion.div>
@@ -208,6 +275,63 @@ const TasksPage = () => {
           </div>
         </div>
       )}
+
+      {/* CRUD Modal */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setIsModalOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-md bg-[#0d1a15] border border-white/10 rounded-2xl shadow-2xl p-6"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-bold text-white font-outfit">{editingTask ? 'Edit Task' : 'New Task'}</h2>
+                <button onClick={() => setIsModalOpen(false)} className="text-zinc-500 hover:text-white"><X size={20}/></button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 block">Title</label>
+                  <input 
+                    type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})}
+                    placeholder="e.g. Belajar Kriptografi"
+                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-[#8c7851] outline-none transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 block">Category / Matkul</label>
+                  <input 
+                    type="text" value={formData.matkul} onChange={e => setFormData({...formData, matkul: e.target.value})}
+                    placeholder="e.g. Kuliah"
+                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-[#8c7851] outline-none transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 block">Deadline</label>
+                  <input 
+                    type="datetime-local" value={formData.deadline} onChange={e => setFormData({...formData, deadline: e.target.value})}
+                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-[#8c7851] outline-none transition-all [color-scheme:dark]"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-8 flex gap-3">
+                <button onClick={() => setIsModalOpen(false)} className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm font-bold transition-all">
+                  Cancel
+                </button>
+                <button onClick={saveTask} className="flex-1 py-3 rounded-xl bg-[#8c7851] hover:bg-[#f0ede4] text-[#0d1a15] text-sm font-bold transition-all">
+                  Save Task
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

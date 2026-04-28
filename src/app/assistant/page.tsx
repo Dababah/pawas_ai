@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, Send, Bot, User, Sparkles, Loader2, Volume2, VolumeX, Image as ImageIcon, X, Command } from 'lucide-react';
+import { Mic, Send, Bot, User, Sparkles, Loader2, Volume2, VolumeX, Image as ImageIcon, X, Command, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { askPawasAI } from '@/lib/gemini';
 import { supabase } from '@/lib/supabase';
@@ -183,97 +183,155 @@ const AssistantPage = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)] max-w-2xl mx-auto">
-      <header className="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
-        <div className="flex items-center gap-2 text-zinc-500 text-xs font-medium uppercase tracking-widest">
-          <span>Workspace</span>
-          <span>/</span>
-          <span className="text-zinc-200">Neural Assistant</span>
+    <div className="flex flex-col h-[calc(100vh-120px)] md:h-screen w-full relative">
+      <header className="absolute top-0 left-0 right-0 p-4 md:p-6 flex items-center justify-between z-10 bg-gradient-to-b from-[#0b0b0b] to-transparent">
+        <div className="flex items-center gap-2 text-xl font-medium tracking-tight text-white font-outfit">
+          Pawas<span className="text-zinc-500">.ai</span>
         </div>
         <button 
           onClick={toggleMute} 
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border ${
-            isMuted ? 'bg-white/5 border-white/10 text-zinc-500' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-          }`}
+          className="p-2 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-all"
         >
-          {isMuted ? (
-            <><VolumeX size={14} /> Voice Off</>
-          ) : (
-            <><Volume2 size={14} /> Voice On</>
-          )}
+          {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
         </button>
       </header>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-8 pr-2 custom-scrollbar">
-        <AnimatePresence>
-          {messages.map((msg, i) => (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              key={i}
-              className="flex gap-4 group"
-            >
-              <div className={`w-8 h-8 rounded flex items-center justify-center flex-shrink-0 ${
-                msg.role === 'user' ? 'bg-zinc-800 text-zinc-400' : 'bg-emerald-500/10 text-emerald-400'
-              }`}>
-                {msg.role === 'user' ? <User size={16} /> : <Command size={16} />}
-              </div>
-              <div className="flex-1 space-y-2">
-                <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">
-                  {msg.role === 'user' ? 'Fawwaz Ali' : 'Pawas AI'}
-                </p>
-                {msg.image && (
-                  <img src={msg.image} alt="Upload" className="rounded-xl w-full max-h-60 object-cover border border-white/5 mb-2" />
-                )}
-                <div className="text-sm leading-relaxed text-zinc-300 custom-html-content">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {msg.text}
-                  </ReactMarkdown>
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 md:px-0 pt-24 pb-32 custom-scrollbar">
+        <div className="max-w-3xl mx-auto space-y-8">
+          <AnimatePresence>
+            {messages.length === 1 && messages[0].role === 'assistant' ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col items-start justify-center pt-10 md:pt-20 pb-10"
+              >
+                <h1 className="text-5xl md:text-6xl font-medium bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-orange-400 tracking-tight font-outfit mb-2">
+                  Hello, Fawwaz
+                </h1>
+                <h2 className="text-5xl md:text-6xl font-medium text-[#f0ede4]/30 tracking-tight font-outfit mb-12">
+                  How can I help you today?
+                </h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+                  {[
+                    { title: 'Create schedule', sub: 'Add tasks to your deadline board', icon: <Clock size={20} className="text-blue-400" /> },
+                    { title: 'Write notes', sub: 'Draft markdown notes in Workspace', icon: <Bot size={20} className="text-orange-400" /> },
+                    { title: 'Market analysis', sub: 'Analyze XAUUSD structure', icon: <Sparkles size={20} className="text-purple-400" /> }
+                  ].map((s, i) => (
+                    <button key={i} onClick={() => setInput(s.title)} className="p-4 rounded-2xl bg-zinc-900/50 hover:bg-zinc-800 text-left transition-all border border-transparent hover:border-white/10 group">
+                      <div className="mb-3">{s.icon}</div>
+                      <p className="text-sm font-medium text-white mb-1">{s.title}</p>
+                      <p className="text-xs text-zinc-500">{s.sub}</p>
+                    </button>
+                  ))}
                 </div>
+              </motion.div>
+            ) : (
+              messages.map((msg, i) => {
+                if (i === 0 && msg.role === 'assistant') return null; // Skip initial greeting if chat started
+
+                return (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    key={i}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start gap-4'} group`}
+                  >
+                    {msg.role === 'assistant' && (
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                        <Sparkles size={20} className="text-purple-400" />
+                      </div>
+                    )}
+                    
+                    <div className={`flex flex-col ${msg.role === 'user' ? 'items-end max-w-[80%]' : 'flex-1 max-w-[100%]'}`}>
+                      {msg.image && (
+                        <img src={msg.image} alt="Upload" className={`rounded-2xl max-h-80 object-cover mb-3 shadow-lg border border-white/5 ${msg.role === 'user' ? 'rounded-tr-sm' : ''}`} />
+                      )}
+                      {msg.text && (
+                        <div className={`text-[15px] leading-relaxed custom-html-content ${
+                          msg.role === 'user' 
+                            ? 'bg-zinc-800 text-white px-5 py-3 rounded-3xl rounded-tr-sm' 
+                            : 'text-zinc-200 py-1'
+                        }`}>
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {msg.text}
+                          </ReactMarkdown>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })
+            )}
+          </AnimatePresence>
+          {isLoading && (
+            <div className="flex justify-start gap-4 mt-4">
+              <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
+                <Sparkles size={20} className="text-purple-400 animate-pulse" />
               </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-        {isLoading && (
-          <div className="flex gap-4">
-            <div className="w-8 h-8 rounded bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-              <Loader2 className="animate-spin" size={16} />
+              <div className="py-2">
+                <Loader2 className="animate-spin text-zinc-500" size={20} />
+              </div>
             </div>
-            <p className="text-xs text-zinc-600 italic mt-2">Thinking...</p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      <div className="mt-8 pt-4 border-t border-white/5">
-        {selectedImage && (
-          <div className="relative inline-block mb-4">
-            <img src={selectedImage} alt="Preview" className="h-20 w-20 object-cover rounded-xl border border-emerald-500" />
-            <button onClick={() => setSelectedImage(null)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg">
-              <X size={12} />
-            </button>
-          </div>
-        )}
-        
-        <div className="flex gap-3 items-center">
-          <div className="flex-1 flex gap-2 items-center bg-[#0b0b0b] rounded-xl px-3 py-1.5 border border-white/5 focus-within:border-zinc-700 transition-all">
-            <input 
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSend(input)}
-              placeholder="Type or use voice command..."
-              className="flex-1 bg-transparent border-none outline-none text-sm text-zinc-300 placeholder:text-zinc-700 py-1"
-            />
+      <div className="absolute bottom-0 left-0 right-0 p-4 md:pb-8 bg-gradient-to-t from-[#0b0b0b] via-[#0b0b0b]/80 to-transparent">
+        <div className="max-w-3xl mx-auto">
+          {selectedImage && (
+            <div className="relative inline-block mb-3 ml-4">
+              <img src={selectedImage} alt="Preview" className="h-16 w-16 object-cover rounded-xl border-2 border-zinc-700 shadow-xl" />
+              <button onClick={() => setSelectedImage(null)} className="absolute -top-2 -right-2 bg-zinc-800 text-white rounded-full p-1 shadow-lg hover:bg-zinc-700 transition-colors">
+                <X size={12} />
+              </button>
+            </div>
+          )}
+          
+          <div className="flex gap-2 items-end bg-zinc-900 rounded-3xl p-2 shadow-2xl border border-white/5 focus-within:border-white/20 transition-all">
             <input type="file" ref={fileInputRef} onChange={handleImageSelect} accept="image/*" className="hidden" />
-            <button onClick={() => fileInputRef.current?.click()} className="p-1.5 text-zinc-600 hover:text-zinc-300 transition-colors">
-              <ImageIcon size={18} />
+            <button onClick={() => fileInputRef.current?.click()} className="p-3 text-zinc-400 hover:text-white transition-colors rounded-full hover:bg-white/5">
+              <ImageIcon size={20} />
             </button>
-            <button onClick={startListening} className={`p-1.5 rounded-lg ${isListening ? 'bg-red-500/20 text-red-400 animate-pulse' : 'text-zinc-600'}`}>
-              <Mic size={18} />
-            </button>
+            <textarea 
+              value={input}
+              onChange={(e) => {
+                setInput(e.target.value);
+                e.target.style.height = 'inherit';
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 150)}px`;
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend(input);
+                }
+              }}
+              placeholder="Ask Pawas AI"
+              className="flex-1 bg-transparent border-none outline-none text-[15px] text-white placeholder:text-zinc-500 py-3 resize-none max-h-[150px] custom-scrollbar"
+              rows={1}
+            />
+            <div className="flex items-center gap-1 mb-1 mr-1">
+              {input.trim() || selectedImage ? (
+                <button 
+                  onClick={() => handleSend(input)} 
+                  disabled={isLoading} 
+                  className="p-3 bg-white text-black rounded-full hover:bg-zinc-200 transition-all active:scale-95 disabled:opacity-50"
+                >
+                  <Send size={18} />
+                </button>
+              ) : (
+                <button 
+                  onClick={startListening} 
+                  className={`p-3 rounded-full transition-all ${isListening ? 'bg-red-500/20 text-red-400 animate-pulse' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}
+                >
+                  <Mic size={20} />
+                </button>
+              )}
+            </div>
           </div>
-          <button onClick={() => handleSend(input)} disabled={(!input.trim() && !selectedImage) || isLoading} className="p-2.5 bg-white text-black rounded-xl hover:bg-zinc-200 transition-all active:scale-95 disabled:opacity-50">
-            <Send size={18} />
-          </button>
+          <p className="text-center text-[10px] text-zinc-600 mt-3 font-medium">
+            Pawas AI may display inaccurate info, including about people, so double-check its responses.
+          </p>
         </div>
       </div>
     </div>
