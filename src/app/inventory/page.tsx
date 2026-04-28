@@ -158,7 +158,8 @@ const InventoryPage = () => {
               <p className="text-zinc-700 text-xs font-black uppercase tracking-widest">Accessing core data...</p>
             </div>
           ) : (
-            <AnimatePresence mode="popLayout">
+            <div className="grid gap-3">
+              <AnimatePresence mode="popLayout">
               {stock.map((item) => (
                 <motion.div
                   variants={itemVariants}

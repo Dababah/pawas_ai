@@ -175,7 +175,8 @@ const TradingPage = () => {
               <p className="text-zinc-700 text-xs font-black uppercase tracking-widest">Analyzing history...</p>
             </div>
           ) : (
-            <AnimatePresence mode="popLayout">
+            <div className="grid gap-3">
+              <AnimatePresence mode="popLayout">
               {history.map((trade) => {
                 const isProfit = (parseFloat(trade.profit_loss) || 0) >= 0;
                 return (
