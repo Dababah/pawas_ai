@@ -223,7 +223,7 @@ export async function POST(req: NextRequest) {
 
     // Extract navigation if present
     let navigateTo = null;
-    const navMatch = aiResponse.match(/<action>.*?"action"\s*:\s*"navigate".*?"path"\s*:\s*"([^"]+)".*?<\/action>/s);
+    const navMatch = aiResponse.match(/<action>[\s\S]*?"action"\s*:\s*"navigate"[\s\S]*?"path"\s*:\s*"([^"]+)"[\s\S]*?<\/action>/);
     if (navMatch) navigateTo = navMatch[1];
 
     return NextResponse.json({
