@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, Send, Bot, User, Sparkles, Loader2, Volume2, VolumeX, Image as ImageIcon, X, Command, Clock } from 'lucide-react';
+import { Mic, Send, Bot, User, Sparkles, Loader2, Volume2, VolumeX, Image as ImageIcon, X, Command, Clock, ThumbsUp, ThumbsDown, RotateCcw, Copy, MoreVertical, Plus, Star, Book, Pin, Settings, Menu, Edit } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { askPawasAI } from '@/lib/gemini';
 import { supabase } from '@/lib/supabase';
@@ -15,6 +15,7 @@ const AssistantPage = () => {
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -183,18 +184,86 @@ const AssistantPage = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)] md:h-screen w-full relative">
-      <header className="absolute top-0 left-0 right-0 p-4 md:p-6 flex items-center justify-between z-10 bg-gradient-to-b from-[#0b0b0b] to-transparent">
-        <div className="flex items-center gap-2 text-xl font-medium tracking-tight text-white font-outfit">
-          Pawas<span className="text-zinc-500">.ai</span>
+    <div className="flex h-[calc(100vh-100px)] md:h-[calc(100vh-6rem)] -mt-8 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden bg-[#0b0b0b]">
+      {/* Gemini Sidebar */}
+      <div className={`${isSidebarOpen ? 'w-64 opacity-100' : 'w-0 opacity-0'} flex-shrink-0 bg-[#1e1f20] transition-all duration-300 flex flex-col rounded-r-3xl overflow-hidden shadow-xl z-20 absolute md:relative h-full`}>
+        <div className="p-4 pt-6">
+          <button onClick={() => setIsSidebarOpen(false)} className="md:hidden p-2 text-zinc-400 hover:text-white mb-4"><Menu size={20}/></button>
+          <button 
+            onClick={() => setMessages([])} 
+            className="flex items-center justify-between w-full p-3 bg-[#0b0b0b] hover:bg-zinc-800 rounded-full text-sm font-medium text-white transition-colors"
+          >
+            <div className="flex items-center gap-3"><Plus size={16} /> Percakapan baru</div>
+            <Edit size={14} className="text-zinc-500" />
+          </button>
         </div>
-        <button 
-          onClick={toggleMute} 
-          className="p-2 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-all"
-        >
-          {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-        </button>
-      </header>
+        
+        <div className="flex-1 overflow-y-auto px-4 py-2 custom-scrollbar">
+          <div className="space-y-6">
+            <button className="flex items-center gap-3 w-full p-2 text-sm text-zinc-300 hover:bg-zinc-800 rounded-lg transition-colors">
+              <Star size={16} /> Item Buatan Saya
+            </button>
+            
+            <div>
+              <div className="flex items-center justify-between text-xs font-bold text-zinc-500 px-2 mb-2">Notebook</div>
+              <button className="flex items-center gap-3 w-full p-2 text-sm text-zinc-300 hover:bg-zinc-800 rounded-lg transition-colors">
+                <Book size={16} /> jual beli hp
+              </button>
+              <button className="flex items-center gap-3 w-full p-2 text-sm text-zinc-300 hover:bg-zinc-800 rounded-lg transition-colors">
+                <Book size={16} /> XAUUSD Recovery System...
+              </button>
+              <button className="flex items-center gap-3 w-full p-2 text-sm text-zinc-300 hover:bg-zinc-800 rounded-lg transition-colors">
+                <Plus size={16} /> Notebook baru
+              </button>
+            </div>
+
+            <button className="flex items-center justify-between w-full p-2 text-sm font-bold text-zinc-500 hover:bg-zinc-800 rounded-lg transition-colors">
+              Gem
+            </button>
+
+            <div>
+              <div className="flex items-center justify-between text-xs font-bold text-zinc-500 px-2 mb-2">Percakapan</div>
+              <button className="flex items-center justify-between w-full p-2 text-sm text-zinc-300 hover:bg-zinc-800 rounded-lg transition-colors">
+                <span className="truncate">COREPAWASPremium GadgetBe...</span> <Pin size={12} className="text-zinc-500" />
+              </button>
+              <button className="flex items-center justify-between w-full p-2 text-sm text-zinc-300 hover:bg-zinc-800 rounded-lg transition-colors">
+                <span className="truncate">Strategi Website Personal Brandi...</span> <Pin size={12} className="text-zinc-500" />
+              </button>
+              <button className="flex items-center justify-between w-full p-2 text-sm text-zinc-300 hover:bg-zinc-800 rounded-lg transition-colors">
+                <span className="truncate">MAGANG/SKRIPSI</span> <Pin size={12} className="text-zinc-500" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 mt-auto">
+          <button className="flex items-center gap-3 w-full p-2 text-sm text-zinc-300 hover:bg-zinc-800 rounded-lg transition-colors">
+            <Settings size={16} /> Setelan & bantuan
+          </button>
+        </div>
+      </div>
+
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col relative w-full h-full">
+        <header className="absolute top-0 left-0 right-0 p-4 md:p-6 flex items-center justify-between z-10 bg-gradient-to-b from-[#0b0b0b] to-transparent">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+              className="p-2 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-all"
+            >
+              <Menu size={20} />
+            </button>
+            <div className="flex items-center gap-2 text-xl font-medium tracking-tight text-white font-outfit">
+              Pawas<span className="text-zinc-500">.ai</span>
+            </div>
+          </div>
+          <button 
+            onClick={toggleMute} 
+            className="p-2 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-all"
+          >
+            {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+          </button>
+        </header>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 md:px-0 pt-24 pb-32 custom-scrollbar">
         <div className="max-w-3xl mx-auto space-y-8">
@@ -256,6 +325,17 @@ const AssistantPage = () => {
                           <ReactMarkdown remarkPlugins={[remarkGfm]}>
                             {msg.text}
                           </ReactMarkdown>
+                        </div>
+                      )}
+                      
+                      {/* Action Buttons for AI */}
+                      {msg.role === 'assistant' && (
+                        <div className="flex items-center gap-1 mt-3 text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button className="p-2 hover:bg-white/5 rounded-full transition-colors"><ThumbsUp size={16} /></button>
+                          <button className="p-2 hover:bg-white/5 rounded-full transition-colors"><ThumbsDown size={16} /></button>
+                          <button className="p-2 hover:bg-white/5 rounded-full transition-colors"><RotateCcw size={16} /></button>
+                          <button onClick={() => navigator.clipboard.writeText(msg.text)} className="p-2 hover:bg-white/5 rounded-full transition-colors"><Copy size={16} /></button>
+                          <button className="p-2 hover:bg-white/5 rounded-full transition-colors"><MoreVertical size={16} /></button>
                         </div>
                       )}
                     </div>
@@ -333,6 +413,7 @@ const AssistantPage = () => {
             Pawas AI may display inaccurate info, including about people, so double-check its responses.
           </p>
         </div>
+      </div>
       </div>
     </div>
   );
