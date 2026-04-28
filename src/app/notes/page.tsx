@@ -114,37 +114,37 @@ export default function AppFlowyWorkspace() {
   const debouncedSave = useDebounce(saveContent, 1200);
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] bg-[#0A0A0A] border border-white/5 rounded-2xl overflow-hidden shadow-2xl font-inter">
+    <div className="flex h-[calc(100vh-8rem)] bg-[#19171a] border border-white/5 rounded-xl overflow-hidden shadow-2xl font-inter">
       {/* ── Left Panel: Page List ──────────────────────────────── */}
-      <aside className={`w-64 shrink-0 bg-[#111111] border-r border-white/5 flex flex-col transition-all ${activePage ? 'hidden md:flex' : 'flex w-full md:w-64'}`}>
+      <aside className={`w-64 shrink-0 bg-[#1d1b1e] border-r border-white/5 flex flex-col transition-all ${activePage ? 'hidden md:flex' : 'flex w-full md:w-64'}`}>
         <div className="p-4 flex items-center justify-between border-b border-white/5">
-          <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Workspace</span>
-          <button onClick={createNewPage} className="p-1.5 text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors" title="New page">
-            <Plus size={16} />
+          <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Documents</span>
+          <button onClick={createNewPage} className="p-1.5 text-zinc-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors" title="New page">
+            <Plus size={14} />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-2 space-y-0.5 custom-scrollbar">
           {loading && pages.length === 0 ? (
-            <div className="flex justify-center p-8"><Loader2 className="animate-spin text-zinc-600" size={20} /></div>
+            <div className="flex justify-center p-8"><Loader2 className="animate-spin text-zinc-700" size={18} /></div>
           ) : pages.length === 0 ? (
             <div className="text-center py-12 px-4">
-              <FileText className="mx-auto mb-3 text-zinc-700" size={28} />
-              <p className="text-xs text-zinc-600">No pages yet. Create one!</p>
+              <FileText className="mx-auto mb-3 text-zinc-800" size={24} />
+              <p className="text-[11px] text-zinc-700">No pages yet.</p>
             </div>
           ) : (
             pages.map(page => (
               <div
                 key={page.id}
                 onClick={() => openPage(page)}
-                className={`group flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-all ${activePage?.id === page.id ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-zinc-200'}`}
+                className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all ${activePage?.id === page.id ? 'bg-white/[0.06] text-white' : 'text-zinc-500 hover:bg-white/[0.03] hover:text-zinc-300'}`}
               >
-                <div className="flex items-center gap-3 overflow-hidden min-w-0">
-                  <span className="text-base leading-none shrink-0">{page.icon || '📄'}</span>
-                  <span className="text-sm font-medium truncate">{page.title || 'Untitled'}</span>
+                <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
+                  <span className="text-sm leading-none shrink-0">{page.icon || '📄'}</span>
+                  <span className="text-[13px] font-medium truncate">{page.title || 'Untitled'}</span>
                 </div>
-                <button onClick={(e) => deletePage(page.id, e)} className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 hover:text-red-400 rounded transition-all shrink-0">
-                  <Trash2 size={14} />
+                <button onClick={(e) => deletePage(page.id, e)} className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/10 hover:text-red-400 rounded transition-all shrink-0">
+                  <Trash2 size={12} />
                 </button>
               </div>
             ))
@@ -153,11 +153,11 @@ export default function AppFlowyWorkspace() {
       </aside>
 
       {/* ── Right Panel: Editor ────────────────────────────────── */}
-      <div className={`flex-1 flex flex-col bg-[#0A0A0A] relative overflow-hidden ${!activePage ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`flex-1 flex flex-col bg-[#19171a] relative overflow-hidden ${!activePage ? 'hidden md:flex' : 'flex'}`}>
         {activePage ? (
           <>
             {/* Breadcrumb Header */}
-            <div className="h-12 border-b border-white/5 flex items-center justify-between px-4 sm:px-6 bg-[#0A0A0A]/80 backdrop-blur-md z-10 shrink-0">
+            <div className="h-12 border-b border-white/5 flex items-center justify-between px-6 bg-[#19171a]/80 backdrop-blur-md z-10 shrink-0">
               <div className="flex items-center gap-2 min-w-0">
                 <button onClick={() => setActivePage(null)} className="md:hidden p-1.5 text-zinc-400 hover:text-white shrink-0">
                   <ArrowLeft size={16} />
@@ -428,8 +428,8 @@ function TiptapEditor({ initialContent, onChange }: { initialContent: any; onCha
           transition: all 0.15s;
         }
         .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"]:checked {
-          background: #8c7851;
-          border-color: #8c7851;
+          background: #3b82f6;
+          border-color: #3b82f6;
         }
         .ProseMirror ul[data-type="taskList"] li > div {
           flex: 1;

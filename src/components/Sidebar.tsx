@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Home, FileText, TrendingUp, Clock, MessageSquare, Search, Settings, HelpCircle, LayoutGrid, Globe } from 'lucide-react';
+import { Home, FileText, TrendingUp, Clock, MessageSquare, Search, Settings, HelpCircle, LayoutGrid, Globe, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -33,28 +33,28 @@ const Sidebar = () => {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 h-screen bg-[#0a0a0b]/90 backdrop-blur-xl border-r border-white/[0.06] p-5 fixed left-0 top-0 z-50">
-        <div className="flex items-center gap-3 px-2 mb-8">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#8c7851] to-[#6b4e3d] flex items-center justify-center shadow-lg shadow-[#8c7851]/10">
-            <LayoutGrid size={18} className="text-white" />
+      <aside className="hidden md:flex flex-col w-64 h-screen bg-[#1c1a1d] border-r border-white/[0.04] py-3 px-3 fixed left-0 top-0 z-50">
+        {/* Workspace Switcher */}
+        <div className="flex items-center gap-2.5 px-3 py-3 mb-4 hover:bg-white/[0.03] rounded-lg cursor-pointer transition-all group">
+          <div className="w-6 h-6 rounded-md bg-[#3b82f6] flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <LayoutGrid size={14} className="text-white" />
           </div>
-          <div>
-            <span className="font-bold text-white text-base block leading-none font-outfit">Pawas<span className="text-[#8c7851]">.ai</span></span>
-            <span className="text-[9px] text-zinc-600 uppercase tracking-widest font-black">Neural System</span>
+          <div className="flex-1 overflow-hidden">
+            <span className="font-bold text-zinc-200 text-sm block leading-none truncate font-inter">Pawas Workspace</span>
           </div>
+          <Settings size={14} className="text-zinc-600 group-hover:text-zinc-400" />
         </div>
 
-        <div className="space-y-1">
+        <div className="space-y-0.5 px-1">
+          {/* Search Button */}
           <button
             onClick={() => setIsSearchOpen(true)}
-            className="w-full flex items-center gap-3 px-3 py-2 text-zinc-500 hover:bg-white/[0.03] rounded-xl text-sm transition-all group mb-4 border border-transparent hover:border-white/[0.06]"
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-zinc-500 hover:bg-white/[0.04] rounded-lg text-sm transition-all group mb-2"
           >
-            <Search size={16} className="group-hover:text-white transition-colors" />
-            <span className="group-hover:text-zinc-300 transition-colors text-xs">Search</span>
-            <kbd className="ml-auto text-[9px] bg-white/[0.03] px-1.5 py-0.5 rounded border border-white/[0.06] text-zinc-600">⌘K</kbd>
+            <Search size={16} />
+            <span className="text-zinc-400 text-[13px]">Search</span>
+            <kbd className="ml-auto text-[10px] text-zinc-600 font-sans tracking-tighter opacity-50">⌘K</kbd>
           </button>
-
-          <div className="text-[9px] font-black text-zinc-700 uppercase tracking-widest px-3 mb-3">Main</div>
 
           {menuItems.map((item) => {
             const isActive = pathname === item.path;
@@ -63,42 +63,42 @@ const Sidebar = () => {
               <Link
                 key={item.path}
                 href={item.path}
-                className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
-                  isActive ? 'text-white' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.03]'
+                className={`group flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all ${
+                  isActive ? 'bg-white/[0.06] text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03]'
                 }`}
               >
-                {isActive && (
-                  <motion.div
-                    layoutId="active-pill"
-                    className="absolute inset-0 bg-white/[0.04] border border-white/[0.08] rounded-xl"
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                  />
-                )}
-                <span className="relative z-10"><Icon size={18} /></span>
-                <span className="relative z-10 font-medium text-xs">{item.label}</span>
-                {isActive && (
-                  <motion.div
-                    layoutId="active-dot"
-                    className="absolute right-3 w-1.5 h-1.5 bg-[#8c7851] rounded-full"
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                  />
-                )}
+                <Icon size={16} className={isActive ? 'text-blue-400' : 'text-zinc-500 group-hover:text-zinc-400'} />
+                <span className="font-medium">{item.label}</span>
               </Link>
             );
           })}
         </div>
 
-        <div className="mt-auto pt-4 border-t border-white/[0.04] space-y-0.5">
-          <button
-            onClick={() => window.open('https://corepawas-hp.vercel.app/', '_blank')}
-            className="w-full flex items-center gap-3 px-3 py-2.5 text-zinc-600 hover:text-[#8c7851] hover:bg-[#8c7851]/5 rounded-xl text-xs transition-all"
+        {/* Workspace Section (AppFlowy Style) */}
+        <div className="mt-8 px-1">
+          <div className="flex items-center justify-between px-3 mb-2 group">
+            <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider">Favorites</span>
+            <Plus size={12} className="text-zinc-600 opacity-0 group-hover:opacity-100 cursor-pointer" />
+          </div>
+          <div className="space-y-0.5">
+             <Link href="/notes" className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-zinc-500 hover:bg-white/[0.03] hover:text-zinc-300 transition-all">
+                <FileText size={16} className="text-zinc-600" />
+                <span>Product Roadmap</span>
+             </Link>
+          </div>
+        </div>
+
+        <div className="mt-auto pt-4 space-y-1 px-1 border-t border-white/[0.02]">
+          <Link
+            href="/assistant"
+            className="flex items-center gap-2.5 px-3 py-2 text-zinc-500 hover:text-blue-400 hover:bg-blue-400/5 rounded-lg text-[13px] transition-all"
           >
-            <Globe size={16} />
-            <span className="font-bold">Core Pawas Web</span>
-          </button>
+            <MessageSquare size={16} />
+            <span className="font-medium">AI Assistant</span>
+          </Link>
           <button
             onClick={() => window.open('https://wa.me/6282342309890', '_blank')}
-            className="w-full flex items-center gap-3 px-3 py-2.5 text-zinc-600 hover:text-zinc-300 hover:bg-white/[0.03] rounded-xl text-xs transition-all"
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.03] rounded-lg text-[13px] transition-all text-left"
           >
             <HelpCircle size={16} />
             <span className="font-medium">Support</span>

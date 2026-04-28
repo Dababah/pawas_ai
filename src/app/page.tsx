@@ -56,39 +56,34 @@ export default function Dashboard() {
       variants={containerVariants} 
       initial="hidden" 
       animate="show" 
-      className="space-y-10 pb-20 industrial-grid min-h-screen"
+      className="space-y-12 pb-20 pt-4"
     >
-      {/* --- HEADER SECTION --- */}
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-6">
-        <div className="space-y-3">
-          <motion.div variants={itemVariants} className="flex items-center gap-2 text-amber-500 text-[10px] font-black uppercase tracking-[0.4em]">
-            <Sparkles size={14} className="animate-pulse" />
-            <span>Neural Command Center</span>
-            <span className="text-zinc-800">|</span>
-            <span className="text-zinc-500">v3.0.2</span>
-          </motion.div>
-          <motion.h1 variants={itemVariants} className="text-5xl md:text-7xl font-black text-white tracking-tighter font-outfit uppercase">
-            Pawas <span className="text-gradient-gold">Controller</span>
+      {/* --- APPFLOWY STYLE HEADER --- */}
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/[0.04] pb-8">
+        <div className="space-y-1">
+          <motion.h1 variants={itemVariants} className="text-3xl md:text-4xl font-bold text-white tracking-tight font-inter">
+            Good Evening, <span className="text-blue-400">Fawwaz</span>
           </motion.h1>
-          <motion.p variants={itemVariants} className="text-zinc-500 text-xs font-medium tracking-wide flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-            System active for Muhammad Fawwaz Ali. Waiting for commands...
+          <motion.p variants={itemVariants} className="text-zinc-500 text-sm font-medium">
+            Manage your workspace, tasks, and neural assets in one place.
           </motion.p>
         </div>
         
-        <motion.div variants={itemVariants} className="hidden lg:flex items-center gap-4">
-          <div className="glass-panel px-6 py-3 border-amber-500/10">
-            <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-0.5">Atomic Habit Tip</p>
-            <p className="text-xs text-amber-500/80 italic">"Focus on the process, not the outcome."</p>
-          </div>
+        <motion.div variants={itemVariants} className="flex items-center gap-3">
+           <button className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-lg transition-all shadow-lg shadow-blue-600/10 flex items-center gap-2">
+             <Plus size={16} /> New Page
+           </button>
+           <button className="p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-all border border-white/[0.06]">
+             <Settings size={18} />
+           </button>
         </motion.div>
       </header>
 
       {/* --- COMMAND CENTER GRID --- */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* COLUMN 1: URGENT DEADLINES (Left - 3 Units) */}
-        <div className="lg:col-span-3 space-y-6">
+        {/* COLUMN 1: RECENT DOCUMENTS (Left - 8 Units) */}
+        <div className="lg:col-span-8 space-y-8">
           <div className="flex items-center justify-between px-1">
             <h2 className="text-[11px] font-black text-zinc-500 uppercase tracking-[0.25em] flex items-center gap-2">
               <Clock size={14} className="text-amber-500" /> Urgent Deadlines
