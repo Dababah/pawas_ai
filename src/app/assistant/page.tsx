@@ -133,15 +133,19 @@ const AssistantPage = () => {
             else if (actionType === 'save_note' || actionType === 'update_notes') {
               const noteTitle = data.title || parsedJson.title || 'AI Generated Note';
               const noteCategory = data.category || parsedJson.category || 'Personal';
-              const noteContent = data.content || cleanText; // If AI forgets content in JSON, use the chat text!
+              const noteContent = data.content || cleanText;
 
-              
               await supabase.from('notes').insert([{
                 title: noteTitle,
                 category: noteCategory,
                 content: noteContent,
                 icon: '🧠'
               }]);
+            }
+            else if (actionType === 'navigate') {
+              if (data.path) {
+                window.location.href = data.path;
+              }
             }
           } catch (e) {
             console.error('Database action failed or Invalid JSON', e);

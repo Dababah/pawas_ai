@@ -29,8 +29,9 @@ const Dashboard = () => {
       const { data } = await supabase
         .from('tasks')
         .select('*')
-        .order('id', { ascending: false })
-        .limit(3);
+        .eq('status', 'pending')
+        .order('deadline', { ascending: true })
+        .limit(4);
       if (data) setRecentTasks(data);
     };
     fetchRecentTasks();
@@ -157,13 +158,18 @@ const Dashboard = () => {
                         <p className="text-[11px] text-[#8c7851]/70 leading-relaxed">{task.matkul || 'General Task'}</p>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between gap-2 pt-2">
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/5">
                       <div className="flex items-center gap-2">
                         <div className={`w-1.5 h-1.5 rounded-full ${task.status === 'completed' ? 'bg-emerald-500' : 'bg-[#6b4e3d] animate-pulse'}`} />
                         <span className={`text-[10px] font-bold uppercase ${task.status === 'completed' ? 'text-emerald-500' : 'text-[#6b4e3d]'}`}>
                           {task.status === 'completed' ? 'Selesai' : 'Pending'}
                         </span>
                       </div>
+                      {task.deadline && (
+                        <span className="text-[10px] font-bold text-[#8c7851]/80 uppercase tracking-widest">
+                          {new Date(task.deadline).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      )}
                     </div>
                   </motion.div>
                 </Link>

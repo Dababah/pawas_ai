@@ -14,6 +14,7 @@ const NotesPage = () => {
   const [activeTab, setActiveTab] = useState('All');
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
+  const [slashMenu, setSlashMenu] = useState({ show: false, x: 0, y: 0 });
   
   const fetchNotes = async () => {
     setLoading(true);
@@ -51,6 +52,38 @@ const NotesPage = () => {
 
   const handleEditorCommand = (command: string, value?: string) => {
     document.execCommand(command, false, value);
+    if (slashMenu.show) setSlashMenu({ ...slashMenu, show: false });
+  };
+
+  const handleEditorKeyUp = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === '/') {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        setSlashMenu({
+          show: true,
+          x: rect.left,
+          y: rect.bottom
+        });
+      }
+    } else if (e.key === 'Escape' || e.key === 'Backspace' || e.key === ' ') {
+      if (slashMenu.show) setSlashMenu({ ...slashMenu, show: false });
+    }
+  };
+
+  const executeSlashCommand = (cmd: string, val?: string) => {
+    document.execCommand('delete', false); // delete the '/'
+    if (cmd === 'formatBlock') {
+      document.execCommand('formatBlock', false, val);
+    } else if (cmd === 'insertHTML') {
+      document.execCommand('insertHTML', false, val);
+    } else if (cmd === 'insertUnorderedList') {
+      document.execCommand('insertUnorderedList', false);
+    } else if (cmd === 'bold') {
+      document.execCommand('bold', false);
+    }
+    setSlashMenu({ ...slashMenu, show: false });
   };
 
   const handleImageUpload = () => {
@@ -362,15 +395,57 @@ const NotesPage = () => {
               </div>
 
               <div 
-                className="text-lg md:text-xl text-zinc-400 leading-relaxed outline-none min-h-[400px] font-medium custom-html-content"
+                className="text-lg md:text-xl text-zinc-400 leading-relaxed outline-none min-h-[400px] font-medium custom-html-content relative"
                 contentEditable 
                 suppressContentEditableWarning
+                onKeyUp={handleEditorKeyUp}
                 onBlur={(e) => {
                   const newContent = e.currentTarget.innerHTML;
                   updateNote(activeNote, { content: newContent });
+                  // Don't hide menu immediately so clicks can register
+                  setTimeout(() => setSlashMenu({ ...slashMenu, show: false }), 200);
                 }}
                 dangerouslySetInnerHTML={{ __html: notes.find(n => n.id === activeNote)?.content || '' }}
               />
+
+              {slashMenu.show && (
+                <div 
+                  className="fixed z-50 w-64 bg-[#0d1a15] border border-white/10 rounded-xl shadow-2xl overflow-hidden"
+                  style={{ top: slashMenu.y + 10, left: slashMenu.x }}
+                >
+                  <div className="p-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest bg-black/20 border-b border-white/5">
+                    Basic Blocks
+                  </div>
+                  <div className="p-1 max-h-60 overflow-y-auto">
+                    {[
+                      { icon: <Type size={16} />, label: 'Text', sub: 'Just start writing', cmd: () => executeSlashCommand('formatBlock', 'P') },
+                      { icon: <Hash size={16} />, label: 'Heading 1', sub: 'Big section heading', cmd: () => executeSlashCommand('formatBlock', 'H1') },
+                      { icon: <Hash size={16} className="scale-90" />, label: 'Heading 2', sub: 'Medium section heading', cmd: () => executeSlashCommand('formatBlock', 'H2') },
+                      { icon: <Hash size={16} className="scale-75" />, label: 'Heading 3', sub: 'Small section heading', cmd: () => executeSlashCommand('formatBlock', 'H3') },
+                      { icon: <List size={16} />, label: 'Bulleted List', sub: 'Create a simple list', cmd: () => executeSlashCommand('insertUnorderedList') },
+                      { icon: <Layout size={16} />, label: 'Divider', sub: 'Visually divide blocks', cmd: () => executeSlashCommand('insertHTML', '<hr class="my-4 border-white/10"/>') },
+                      { icon: <Sparkles size={16} className="text-purple-500" />, label: 'Ask AI', sub: 'Generate content', cmd: () => { document.execCommand('delete', false); setSlashMenu({...slashMenu, show: false}); const el = document.querySelector('input[placeholder="Command Neural AI to write something..."]') as HTMLInputElement; if(el) el.focus(); } },
+                    ].map((item, idx) => (
+                      <button
+                        key={idx}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          item.cmd();
+                        }}
+                        className="w-full flex items-center gap-3 p-2 hover:bg-white/5 rounded-lg text-left transition-colors"
+                      >
+                        <div className="w-8 h-8 rounded bg-white/5 flex items-center justify-center text-zinc-400">
+                          {item.icon}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-white">{item.label}</p>
+                          <p className="text-[10px] text-zinc-500">{item.sub}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="mt-auto py-6 border-t border-white/5 flex items-center justify-between bg-black/50 backdrop-blur-xl">
