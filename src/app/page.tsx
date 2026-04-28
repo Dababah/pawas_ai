@@ -174,22 +174,7 @@ const Dashboard = () => {
               )}
             </div>
 
-            <Link href="/tasks">
-              <motion.div variants={itemVariants} className="glass-panel p-5 space-y-4 cursor-pointer hover:border-[#8c7851]/20 transition-all">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-400 shrink-0">
-                    <Target size={20} />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-bold text-white">Meeting Supplier</p>
-                    <p className="text-[11px] text-zinc-500 leading-relaxed">Update stok iPhone 15 Series untuk Pawas.ai</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 pt-2">
-                  <span className="text-[10px] text-zinc-500 font-bold uppercase">Besok, 09:00 AM</span>
-                </div>
-              </motion.div>
-            </Link>
+
           </section>
 
         </div>

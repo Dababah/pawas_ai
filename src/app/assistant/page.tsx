@@ -76,8 +76,21 @@ const AssistantPage = () => {
     setIsLoading(true);
 
     try {
+      // Fetch Omniscient Context (Notion-like Global Access)
+      const { data: tasksData } = await supabase.from('tasks').select('*').order('deadline', { ascending: true });
+      const { data: notesData } = await supabase.from('notes').select('id, title, category, created_at'); // Light summary
+      const { data: tradesData } = await supabase.from('trades').select('*').order('id', { ascending: false }).limit(5);
+
+      const dbContext = {
+        active_tasks: tasksData || [],
+        available_notes: notesData || [],
+        recent_trades: tradesData || []
+      };
+
+      const contextualText = `[REALTIME DB CONTEXT]: ${JSON.stringify(dbContext)}\n\n[USER COMMAND]: ${text || 'Analisis gambar ini'}`;
+
       const response = await askPawasAI(
-        text || 'Analisis gambar ini', 
+        contextualText, 
         messages.map(m => ({
           role: m.role === 'user' ? 'user' : 'model',
           parts: [{ text: m.text }]
@@ -105,6 +118,12 @@ const AssistantPage = () => {
               await supabase.from('tasks').insert([{...data, status: 'pending'}]);
               if (data.deadline) await scheduleTaskNotification(data.title, data.deadline);
             }
+            else if (actionType === 'delete_task') {
+              await supabase.from('tasks').delete().eq('id', data.id);
+            }
+            else if (actionType === 'update_task') {
+              await supabase.from('tasks').update({ status: data.status }).eq('id', data.id);
+            }
             else if (actionType === 'save_inventory' || actionType === 'add_inventory') {
               await supabase.from('inventory').insert([{...data, status: 'ready'}]);
             }
@@ -115,6 +134,7 @@ const AssistantPage = () => {
               const noteTitle = data.title || parsedJson.title || 'AI Generated Note';
               const noteCategory = data.category || parsedJson.category || 'Personal';
               const noteContent = data.content || cleanText; // If AI forgets content in JSON, use the chat text!
+
               
               await supabase.from('notes').insert([{
                 title: noteTitle,
