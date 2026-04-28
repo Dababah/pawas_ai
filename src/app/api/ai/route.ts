@@ -149,9 +149,9 @@ export async function POST(req: NextRequest) {
 
     // Try multiple Gemini models with fallback
     const modelsToTry = [
-      'gemini-2.0-flash',
-      'gemini-1.5-flash',
-      'gemini-1.5-pro',
+      'gemini-1.5-flash-latest',
+      'gemini-1.5-pro-latest',
+      'gemini-2.0-flash-exp',
     ];
 
     let aiResponse = '';
