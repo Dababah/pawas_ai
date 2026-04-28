@@ -175,8 +175,7 @@ const TradingPage = () => {
               <p className="text-zinc-700 text-xs font-black uppercase tracking-widest">Analyzing history...</p>
             </div>
           ) : (
-            <div className="grid gap-3">
-              <AnimatePresence mode="popLayout">
+            <AnimatePresence mode="popLayout">
               {history.map((trade) => {
                 const isProfit = (parseFloat(trade.profit_loss) || 0) >= 0;
                 return (
@@ -223,8 +222,7 @@ const TradingPage = () => {
                 );
               })}
             </AnimatePresence>
-          </div>
-        )}
+          )}
 
         {!loading && history.length === 0 && (
           <div className="text-center py-24 glass-panel border-dashed border-white/5 rounded-[2rem]">
@@ -233,7 +231,8 @@ const TradingPage = () => {
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
+  </motion.div>
   );
 };
 
