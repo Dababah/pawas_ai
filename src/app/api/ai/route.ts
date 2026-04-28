@@ -8,57 +8,47 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
 
-const SYSTEM_PROMPT = `Anda adalah Pawas.ai, asisten neural otonom yang terhubung ke seluruh sistem workspace Muhammad Fawwaz Ali. Anda bertindak sebagai AI Agent yang bisa mengontrol data secara langsung.
+const SYSTEM_PROMPT = `Anda adalah Asisten Pribadi bernama Pawas AI, pusat kendali (Command Center) neural untuk Muhammad Fawwaz Ali. Anda memiliki akses langsung ke Database Supabase yang berisi data Kuliah, Bisnis HP (Corepawas), dan Trading.
 
 Konteks Pengguna:
-- Mahasiswa IT UMY Semester 6 (Fokus: Full-stack, Blockchain, Network Security)
-- Pebisnis Gadget (Brand: Core Pawas). Website: https://corepawas-hp.vercel.app
-- Trader XAUUSD & BTCUSD (Strategi: Market Structure & SMC)
-- Lokasi: Kasihan, Bantul, Yogyakarta
+- Nama: Muhammad Fawwaz Ali (Mahasiswa IT Semester 6)
+- Bisnis: Corepawas Gadget (Stok iPhone/Android second di Kasihan, Bantul)
+- Trading: XAUUSD & BTCUSD (Strategi: SMC/Price Action)
+- Filosofi: Atomic Habits (Efisien, disiplin, progresif)
 
-SKEMA DATABASE SUPABASE YANG TERSEDIA:
-1. tasks (id, title, matkul, deadline, status[pending/completed], created_at)
-2. notes (id, title, content, category, icon, created_at)  
-3. pages (id, title, icon, user_id, created_at, updated_at)
-4. blocks (id, page_id, type, content, position_index)
-5. trades (id, pair, entry, result, notes, created_at)
-6. inventory (id, unit, buy_price, sell_price, status[ready/sold])
+SKEMA DATABASE SUPABASE (PAWAS COMMAND CENTER):
+1. task_management (id, nim, title, deadline, status_lab[Pending/Completed], priority[Low/Medium/High/Urgent], category, notes)
+2. inventory_hp (id, tipe_hp, harga_beli, harga_jual, status_barang[Ready/Sold/Reserved], buyer_name, imei, condition)
+3. trading_journal (id, pair, major_trend[Bullish/Bearish], entry_price, exit_price, profit_loss, strategy, notes)
+4. schedules (id, title, category[Gym/Project/Meeting/Personal], scheduled_at, duration_minutes, is_completed)
+5. pages & blocks (Workspace Notion-style untuk dokumentasi panjang)
 
-ATURAN WAJIB AKSI SISTEM:
-Jika user meminta untuk melakukan aksi apapun, Anda HARUS menyertakan blok JSON di akhir respons dalam tag <action>.
+TUGAS ANDA:
+1. Otomatisasi Input: Jika user berkata "Pawas, stok masuk iPhone 12 5jt", gunakan save_inventory.
+2. Manajemen Prioritas: Jika user bertanya apa yang harus dikerjakan, cek task_management & schedules. Prioritaskan deadline terdekat (misal: Lab OSPF atau Capstone).
+3. Recap Bisnis: Jika diminta rekap, buat tabel ringkasan dari inventory_hp atau trading_journal.
+4. Gaya Komunikasi: Profesional, efisien, dan berikan kutipan motivasi Atomic Habits di akhir jika relevan.
 
-FORMAT AKSI YANG DIDUKUNG:
+FORMAT AKSI SISTEM (<action>JSON</action>):
 
-1. MEMBUAT TASK/DEADLINE:
-<action>{"action":"save_task","data":{"title":"Nama Tugas","matkul":"Kategori","deadline":"2026-04-29T12:00:00+07:00"}}</action>
+1. SAVE TASK:
+<action>{"action":"save_task","data":{"title":"Lab OSPF","deadline":"2026-04-29T23:59:00+07:00","priority":"Urgent","category":"Networking"}}</action>
 
-2. MEMBUAT CATATAN:
-<action>{"action":"save_note","data":{"title":"Judul","category":"Kategori","content":"Isi markdown..."}}</action>
+2. SAVE INVENTORY:
+<action>{"action":"save_inventory","data":{"tipe_hp":"iPhone 13 128GB","harga_beli":8500000,"harga_jual":9500000,"status_barang":"Ready"}}</action>
 
-3. MEMBUAT HALAMAN WORKSPACE:
-<action>{"action":"save_page","data":{"title":"Judul Halaman","icon":"📄","content":"Isi halaman..."}}</action>
+3. LOG TRADE:
+<action>{"action":"save_trade","data":{"pair":"XAUUSD","major_trend":"Bullish","entry_price":2350.5,"notes":"H4 Breakout"}}</action>
 
-4. LOG TRADING:
-<action>{"action":"save_trade","data":{"pair":"XAUUSD","entry":2340.5,"result":"TP +50 pips","notes":"Breakout structure H4"}}</action>
+4. SAVE SCHEDULE:
+<action>{"action":"save_schedule","data":{"title":"Gym Session","category":"Gym","scheduled_at":"2026-04-28T17:00:00+07:00"}}</action>
 
-5. INVENTORY:
-<action>{"action":"save_inventory","data":{"unit":"iPhone 15 Pro 256GB","buy_price":15000000,"sell_price":16500000}}</action>
+5. NAVIGASI:
+<action>{"action":"navigate","data":{"path":"/dashboard"}}</action>
 
-6. HAPUS TASK:
-<action>{"action":"delete_task","data":{"id":123}}</action>
-
-7. UPDATE STATUS TASK:
-<action>{"action":"update_task","data":{"id":123,"status":"completed"}}</action>
-
-8. NAVIGASI:
-<action>{"action":"navigate","data":{"path":"/tasks"}}</action>
-
-CATATAN PENTING:
-- Deadline HARUS format ISO 8601 dengan timezone +07:00 (WIB)
-- Waktu sekarang: ${new Date().toISOString()}
-- Selalu berikan konfirmasi profesional di luar tag <action>
-- Respons harus terstruktur rapi menggunakan markdown
-- Anda bisa membaca data yang diberikan dalam context untuk memberikan analisis`;
+PENTING:
+- Deadline & Schedule HARUS format ISO 8601 dengan timezone +07:00.
+- Waktu sekarang: ${new Date().toISOString()}`;
 
 // Execute database actions from AI response
 async function executeAction(actionData: any): Promise<string> {
@@ -66,26 +56,40 @@ async function executeAction(actionData: any): Promise<string> {
     const { action, data } = actionData;
     
     switch (action) {
-      case 'save_task':
-      case 'add_task': {
-        const { error } = await supabase.from('tasks').insert([{
+      case 'save_task': {
+        const { error } = await supabase.from('task_management').insert([{
           ...data,
-          status: data.status || 'pending'
+          nim: '21110xxx' // Default for Fawwaz
         }]);
         if (error) throw error;
-        return `✅ Task "${data.title}" berhasil dibuat`;
+        return `✅ Tugas "${data.title}" berhasil dicatat di Command Center.`;
       }
 
-      case 'save_note':
-      case 'update_notes': {
-        const { error } = await supabase.from('notes').insert([{
-          title: data.title || 'AI Generated Note',
-          category: data.category || 'Personal',
-          content: data.content || '',
-          icon: data.icon || '🧠'
+      case 'save_inventory': {
+        const { error } = await supabase.from('inventory_hp').insert([{
+          ...data,
+          status_barang: data.status_barang || 'Ready'
         }]);
         if (error) throw error;
-        return `✅ Note "${data.title}" berhasil disimpan`;
+        return `✅ Unit "${data.tipe_hp}" berhasil masuk ke inventaris Corepawas.`;
+      }
+
+      case 'save_trade': {
+        const { error } = await supabase.from('trading_journal').insert([data]);
+        if (error) throw error;
+        return `✅ Jurnal trading ${data.pair} berhasil diamankan.`;
+      }
+
+      case 'save_schedule': {
+        const { error } = await supabase.from('schedules').insert([data]);
+        if (error) throw error;
+        return `✅ Jadwal "${data.title}" telah ditambahkan ke kalender.`;
+      }
+
+      case 'save_note': {
+        const { error } = await supabase.from('notes').insert([data]);
+        if (error) throw error;
+        return `✅ Catatan berhasil disimpan.`;
       }
 
       case 'save_page': {
@@ -94,7 +98,6 @@ async function executeAction(actionData: any): Promise<string> {
           .insert([{ title: data.title, icon: data.icon || '📄' }])
           .select();
         if (pageError) throw pageError;
-        
         if (pageData?.[0] && data.content) {
           await supabase.from('blocks').insert([{
             page_id: pageData[0].id,
@@ -103,47 +106,18 @@ async function executeAction(actionData: any): Promise<string> {
             position_index: 0
           }]);
         }
-        return `✅ Page "${data.title}" berhasil dibuat di Workspace`;
-      }
-
-      case 'save_trade':
-      case 'log_trade': {
-        const { error } = await supabase.from('trades').insert([data]);
-        if (error) throw error;
-        return `✅ Trade log untuk ${data.pair} berhasil disimpan`;
-      }
-
-      case 'save_inventory':
-      case 'add_inventory': {
-        const { error } = await supabase.from('inventory').insert([{
-          ...data,
-          status: 'ready'
-        }]);
-        if (error) throw error;
-        return `✅ Inventory "${data.unit}" berhasil ditambahkan`;
-      }
-
-      case 'delete_task': {
-        const { error } = await supabase.from('tasks').delete().eq('id', data.id);
-        if (error) throw error;
-        return `✅ Task berhasil dihapus`;
-      }
-
-      case 'update_task': {
-        const { error } = await supabase.from('tasks').update({ status: data.status }).eq('id', data.id);
-        if (error) throw error;
-        return `✅ Task status berhasil diupdate ke ${data.status}`;
+        return `✅ Workspace Page "${data.title}" berhasil dibuat.`;
       }
 
       case 'navigate':
-        return `🔗 Navigate to ${data.path}`;
+        return `🔗 Menuju ke ${data.path}...`;
 
       default:
-        return `⚠️ Unknown action: ${action}`;
+        return `⚠️ Aksi tidak dikenal: ${action}`;
     }
   } catch (err: any) {
     console.error('Action execution error:', err);
-    return `❌ Gagal: ${err.message}`;
+    return `❌ Gagal menjalankan aksi: ${err.message}`;
   }
 }
 
@@ -152,18 +126,18 @@ export async function POST(req: NextRequest) {
     const { message, history, imageBase64 } = await req.json();
 
     // Fetch database context for AI omniscience
-    const [tasksRes, notesRes, tradesRes, inventoryRes] = await Promise.all([
-      supabase.from('tasks').select('*').order('deadline', { ascending: true }).limit(20),
-      supabase.from('notes').select('id, title, category, created_at').order('created_at', { ascending: false }).limit(20),
-      supabase.from('trades').select('*').order('id', { ascending: false }).limit(10),
-      supabase.from('inventory').select('*').limit(20),
+    const [tasksRes, inventoryRes, tradingRes, schedulesRes] = await Promise.all([
+      supabase.from('task_management').select('*').order('deadline', { ascending: true }).limit(20),
+      supabase.from('inventory_hp').select('*').order('created_at', { ascending: false }).limit(20),
+      supabase.from('trading_journal').select('*').order('created_at', { ascending: false }).limit(10),
+      supabase.from('schedules').select('*').order('scheduled_at', { ascending: true }).limit(20),
     ]);
 
     const dbContext = {
       active_tasks: tasksRes.data || [],
-      notes_summary: notesRes.data || [],
-      recent_trades: tradesRes.data || [],
       inventory: inventoryRes.data || [],
+      trading_history: tradingRes.data || [],
+      schedules: schedulesRes.data || [],
     };
 
     const chatHistory = (history || [])

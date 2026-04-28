@@ -1,29 +1,31 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Package, Plus, Smartphone, Trash2, RefreshCw, FileDown, Activity, DollarSign, ArrowUpRight, Search } from 'lucide-react';
+import { Package, Plus, Smartphone, Trash2, RefreshCw, FileDown, Activity, DollarSign, ArrowUpRight, Search, ShieldCheck, Tag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { supabase, Inventory } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
 const InventoryPage = () => {
-  const [stock, setStock] = useState<Inventory[]>([]);
+  const [stock, setStock] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newItem, setNewItem] = useState<{unit: string, buy_price: number, sell_price: number, status: 'ready' | 'sold'}>({ 
-    unit: '', 
-    buy_price: 0, 
-    sell_price: 0, 
-    status: 'ready' 
+  const [newItem, setNewItem] = useState({ 
+    tipe_hp: '', 
+    harga_beli: 0, 
+    harga_jual: 0, 
+    status_barang: 'Ready',
+    imei: '',
+    condition: 'Second'
   });
 
   const fetchInventory = async () => {
     setLoading(true);
     const { data, error } = await supabase
-      .from('inventory')
+      .from('inventory_hp')
       .select('*')
-      .order('id', { ascending: false });
+      .order('created_at', { ascending: false });
     
     if (data) setStock(data);
     setLoading(false);
@@ -33,8 +35,8 @@ const InventoryPage = () => {
     fetchInventory();
   }, []);
 
-  const deleteItem = async (id: number) => {
-    const { error } = await supabase.from('inventory').delete().eq('id', id);
+  const deleteItem = async (id: string) => {
+    const { error } = await supabase.from('inventory_hp').delete().eq('id', id);
     if (!error) {
       setStock(prev => prev.filter(item => item.id !== id));
     }
@@ -42,48 +44,42 @@ const InventoryPage = () => {
 
   const addUnit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { data, error } = await supabase.from('inventory').insert([newItem]).select();
+    const { data, error } = await supabase.from('inventory_hp').insert([newItem]).select();
     if (data) {
       setStock([data[0], ...stock]);
-    } else {
-      setStock([{ id: Date.now(), ...newItem }, ...stock]);
     }
     setIsModalOpen(false);
-    setNewItem({ unit: '', buy_price: 0, sell_price: 0, status: 'ready' });
+    setNewItem({ tipe_hp: '', harga_beli: 0, harga_jual: 0, status_barang: 'Ready', imei: '', condition: 'Second' });
   };
 
   const exportToPDF = () => {
     const doc = new jsPDF();
     doc.setFontSize(18);
-    doc.text('Laporan Inventaris Core Pawas', 14, 22);
+    doc.text('Laporan Inventaris Corepawas', 14, 22);
     doc.setFontSize(11);
-    doc.setTextColor(100);
     doc.text(`Dicetak pada: ${new Date().toLocaleString()}`, 14, 30);
 
     const tableData = stock.map(item => [
-      item.unit,
-      item.buy_price.toLocaleString('id-ID'),
-      item.sell_price.toLocaleString('id-ID'),
-      item.status.toUpperCase()
+      item.tipe_hp,
+      item.harga_beli.toLocaleString('id-ID'),
+      item.harga_jual.toLocaleString('id-ID'),
+      item.status_barang.toUpperCase()
     ]);
 
     (doc as any).autoTable({
       startY: 40,
-      head: [['Unit Gadget', 'Harga Beli (Rp)', 'Harga Jual (Rp)', 'Status']],
+      head: [['Model HP', 'Harga Beli (Rp)', 'Harga Jual (Rp)', 'Status']],
       body: tableData,
       theme: 'grid',
-      headStyles: { fillColor: [16, 185, 129] }
+      headStyles: { fillColor: [6, 182, 212] } // Cyan
     });
 
-    doc.save(`Laporan_Inventaris_PawasAI_${new Date().toISOString().slice(0,10)}.pdf`);
+    doc.save(`Corepawas_Inventory_${new Date().toISOString().slice(0,10)}.pdf`);
   };
 
   const containerVariants = {
     hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: { staggerChildren: 0.05 }
-    }
+    show: { opacity: 1, transition: { staggerChildren: 0.05 } }
   };
 
   const itemVariants = {
@@ -96,123 +92,123 @@ const InventoryPage = () => {
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="space-y-8 pb-20"
+      className="space-y-8 pb-20 industrial-grid min-h-screen"
     >
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-[#8c7851]/60 text-[10px] font-bold uppercase tracking-[0.3em]">
-            <Package size={12} className="text-[#4a6741]" />
-            <span>Business Assets</span>
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-4">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-cyan-500 text-[10px] font-black uppercase tracking-[0.4em]">
+            <Smartphone size={14} className="animate-pulse" />
+            <span>Corepawas Gadget</span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-black text-[#f0ede4] font-outfit tracking-tight">Core Inventory</h1>
+          <h1 className="text-4xl md:text-6xl font-black text-white font-outfit tracking-tighter uppercase">Inventory <span className="text-gradient-gold">HP</span></h1>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button 
             onClick={exportToPDF} 
-            className="flex items-center gap-2 px-4 py-2.5 bg-[#1a2e26] border border-white/5 rounded-xl text-xs font-bold text-[#8c7851]/80 hover:text-[#f0ede4] transition-all shadow-xl"
+            className="flex items-center gap-2 px-6 py-3 glass-panel border-white/10 text-zinc-400 hover:text-white transition-all text-xs font-black uppercase tracking-widest"
           >
             <FileDown size={16} />
-            <span className="hidden sm:inline">Export PDF</span>
-          </button>
-          <button 
-            onClick={fetchInventory} 
-            className="p-2.5 bg-[#1a2e26] border border-white/5 rounded-xl text-[#8c7851]/80 hover:text-[#f0ede4] transition-all shadow-xl"
-          >
-            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+            <span className="hidden sm:inline">Export</span>
           </button>
           <button 
             onClick={() => setIsModalOpen(true)} 
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#f0ede4] text-[#0d1a15] rounded-xl text-sm font-bold hover:bg-[#8c7851] hover:text-[#f0ede4] transition-all shadow-xl"
+            className="flex items-center gap-2 px-6 py-3 bg-cyan-500 text-black rounded-xl text-xs font-black uppercase tracking-widest hover:bg-cyan-400 transition-all shadow-[0_0_20px_-5px_rgba(6,182,212,0.5)]"
           >
             <Plus size={18} />
-            <span>Add Unit</span>
+            <span>Add Stock</span>
           </button>
         </div>
       </header>
 
+      {/* Metrics Section */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total Units', val: stock.length, sub: 'In Warehouse', icon: <Package size={14} />, color: 'text-[#f0ede4]' },
-          { label: 'Est. Revenue', val: `Rp ${(stock.reduce((acc, i) => acc + i.sell_price, 0) / 1000000).toFixed(1)}M`, sub: 'Projected', icon: <DollarSign size={14} />, color: 'text-[#4a6741]' },
-          { label: 'Avg Margin', val: 'Rp 850K', sub: 'Per Unit', icon: <Activity size={14} />, color: 'text-[#8c7851]' },
-          { label: 'Ready Stock', val: stock.filter(s => s.status === 'ready').length, sub: 'Units', icon: <Smartphone size={14} />, color: 'text-[#6b4e3d]' },
+          { label: 'Total Stock', val: stock.length, sub: 'Units', icon: <Package size={14} />, color: 'text-white' },
+          { label: 'Est. Revenue', val: `Rp ${(stock.reduce((acc, i) => acc + i.harga_jual, 0) / 1000000).toFixed(1)}M`, sub: 'Projected', icon: <DollarSign size={14} />, color: 'text-cyan-400' },
+          { label: 'Avg Margin', val: 'Rp 750K', sub: 'Per Unit', icon: <Activity size={14} />, color: 'text-amber-500' },
+          { label: 'Ready Now', val: stock.filter(s => s.status_barang === 'Ready').length, sub: 'Available', icon: <ShieldCheck size={14} />, color: 'text-emerald-400' },
         ].map((stat, idx) => (
-          <motion.div key={idx} variants={itemVariants} className="glass-panel p-4 flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-[#8c7851]/60">
+          <motion.div key={idx} variants={itemVariants} className="glass-panel p-6 border-white/5 bg-white/[0.02]">
+            <div className="flex items-center gap-2 text-zinc-600 mb-3">
               {stat.icon}
-              <span className="text-[10px] font-bold uppercase tracking-wider">{stat.label}</span>
+              <span className="text-[9px] font-black uppercase tracking-widest">{stat.label}</span>
             </div>
-            <p className={`text-xl font-bold ${stat.color} font-outfit`}>{stat.val}</p>
-            <p className="text-[9px] text-[#8c7851]/40 font-bold uppercase">{stat.sub}</p>
+            <p className={`text-2xl font-black ${stat.color} font-outfit`}>{stat.val}</p>
+            <p className="text-[9px] text-zinc-700 font-bold uppercase mt-1 tracking-tighter">{stat.sub}</p>
           </motion.div>
         ))}
       </div>
 
       <div className="space-y-4">
         <div className="flex items-center justify-between px-1">
-          <h2 className="text-xs font-bold text-[#8c7851]/60 uppercase tracking-[0.2em]">Inventory Log</h2>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 mr-4">
-              <div className="w-2 h-2 rounded-full bg-[#4a6741]" />
-              <span className="text-[9px] text-[#4a6741] font-bold uppercase">Ready</span>
-            </div>
-            <span className="text-[10px] text-[#8c7851]/40 font-bold uppercase">{stock.length} Total Units</span>
+          <h2 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.25em]">Stock Database</h2>
+          <div className="flex items-center gap-3">
+             <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                <span className="text-[9px] text-zinc-600 font-black uppercase">Live System</span>
+              </div>
           </div>
         </div>
 
         <div className="grid gap-3">
           {loading && stock.length === 0 ? (
-            <div className="text-center py-20 bg-zinc-950/50 rounded-3xl border border-white/5">
-              <div className="w-10 h-10 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-zinc-500 text-sm font-medium">Syncing warehouse data...</p>
+            <div className="text-center py-24 glass-panel border-white/5 animate-pulse">
+              <RefreshCw size={32} className="animate-spin mx-auto text-zinc-800 mb-4" />
+              <p className="text-zinc-700 text-xs font-black uppercase tracking-widest">Accessing core data...</p>
             </div>
           ) : (
             <AnimatePresence mode="popLayout">
-              {stock.map((item, i) => (
+              {stock.map((item) => (
                 <motion.div
                   variants={itemVariants}
                   initial="hidden"
                   animate="show"
                   exit={{ opacity: 0, scale: 0.95 }}
                   key={item.id}
-                  className="glass-panel p-5 flex items-center justify-between group hover:bg-white/[0.02] transition-all"
+                  className="glass-panel p-5 flex items-center justify-between group hover:border-cyan-500/30 transition-all bg-white/[0.01]"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-zinc-400 group-hover:scale-110 transition-transform group-hover:bg-purple-500/10 group-hover:text-purple-400">
-                      <Smartphone size={24} />
+                  <div className="flex items-center gap-5">
+                    <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-zinc-600 group-hover:bg-cyan-500/10 group-hover:text-cyan-400 transition-all">
+                      <Smartphone size={28} />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-bold text-white tracking-tight">{item.unit}</p>
-                        {item.status === 'ready' && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        )}
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-3">
+                        <p className="text-base font-black text-white uppercase tracking-tight">{item.tipe_hp}</p>
+                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${
+                          item.condition === 'New' ? 'bg-cyan-500/20 text-cyan-500' : 'bg-amber-500/20 text-amber-500'
+                        }`}>
+                          {item.condition}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-3 mt-1">
-                        <div className="flex items-center gap-1">
-                          <span className="text-[9px] text-zinc-600 font-bold uppercase">Buy:</span>
-                          <span className="text-[10px] text-zinc-400 font-medium font-outfit">Rp {item.buy_price.toLocaleString('id-ID')}</span>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1.5">
+                          <Tag size={12} className="text-zinc-700" />
+                          <span className="text-[10px] text-zinc-400 font-bold font-outfit">Rp {item.harga_jual.toLocaleString('id-ID')}</span>
                         </div>
-                        <div className="w-1 h-1 rounded-full bg-zinc-800" />
-                        <div className="flex items-center gap-1">
-                          <span className="text-[9px] text-zinc-600 font-bold uppercase">Target:</span>
-                          <span className="text-[10px] text-emerald-400 font-bold font-outfit">Rp {item.sell_price.toLocaleString('id-ID')}</span>
-                        </div>
+                        <div className="h-3 w-[1px] bg-zinc-800" />
+                        <span className="text-[9px] text-zinc-600 font-black uppercase">IMEI: {item.imei || 'NOT_SET'}</span>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-4">
-                    <div className="hidden sm:flex flex-col items-end">
-                      <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Expected Margin</p>
-                      <p className="text-xs font-bold text-white font-outfit">+Rp {(item.sell_price - item.buy_price).toLocaleString('id-ID')}</p>
+                  <div className="flex items-center gap-6">
+                    <div className="hidden md:flex flex-col items-end">
+                      <p className="text-[9px] font-black text-zinc-700 uppercase tracking-widest">Expected Profit</p>
+                      <p className="text-sm font-black text-emerald-500 font-outfit">
+                        +Rp {(item.harga_jual - item.harga_beli).toLocaleString('id-ID')}
+                      </p>
+                    </div>
+                    <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                      item.status_barang === 'Ready' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'
+                    }`}>
+                      {item.status_barang}
                     </div>
                     <button 
-                      onClick={() => item.id && deleteItem(item.id)}
-                      className="p-2.5 hover:bg-red-500/10 hover:text-red-500 text-zinc-700 rounded-xl transition-all"
+                      onClick={() => deleteItem(item.id)}
+                      className="p-3 text-zinc-800 hover:text-red-500 hover:bg-red-500/5 rounded-xl transition-all"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={20} />
                     </button>
                   </div>
                 </motion.div>
@@ -221,15 +217,16 @@ const InventoryPage = () => {
           )}
 
           {!loading && stock.length === 0 && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-20 bg-zinc-950/30 border border-dashed border-white/5 rounded-[2rem]"
-            >
-              <Package size={40} className="mx-auto text-zinc-800 mb-4" />
-              <p className="text-zinc-600 text-sm font-medium">No units found in your digital warehouse.</p>
-              <p className="text-zinc-700 text-[10px] uppercase font-bold tracking-widest mt-2">Initialize supply via neural assistant</p>
-            </motion.div>
+            <div className="text-center py-24 glass-panel border-dashed border-white/5 rounded-[2rem]">
+              <Package size={48} className="mx-auto text-zinc-900 mb-6" />
+              <p className="text-zinc-700 text-[11px] font-black uppercase tracking-[0.3em]">No units registered in Corepawas DB</p>
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="mt-6 px-8 py-3 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+              >
+                Manual Entry
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -237,68 +234,45 @@ const InventoryPage = () => {
       {/* Add Unit Modal */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
             <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setIsModalOpen(false)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/90 backdrop-blur-sm"
             />
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md glass-panel p-8 space-y-6"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-xl glass-panel p-10 border-cyan-500/20 bg-[#0a0a0b]"
             >
-              <h2 className="text-2xl font-black text-white font-outfit tracking-tight">Register Unit</h2>
-              <form onSubmit={addUnit} className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-[#8c7851] uppercase tracking-widest px-1">Unit Model</label>
-                  <input 
-                    required
-                    value={newItem.unit}
-                    onChange={(e) => setNewItem({...newItem, unit: e.target.value})}
-                    placeholder="e.g. iPhone 15 Pro Max 256GB"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white outline-none focus:border-[#4a6741] transition-all"
-                  />
+              <h2 className="text-3xl font-black text-white font-outfit tracking-tighter uppercase mb-8">Stock <span className="text-cyan-500">Registration</span></h2>
+              <form onSubmit={addUnit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Model Name</label>
+                  <input required value={newItem.tipe_hp} onChange={(e) => setNewItem({...newItem, tipe_hp: e.target.value})} placeholder="iPhone 15 Pro Max..." className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-5 text-white outline-none focus:border-cyan-500 transition-all font-bold uppercase text-sm" />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-[#8c7851] uppercase tracking-widest px-1">Buy Price (Rp)</label>
-                    <input 
-                      required
-                      type="number"
-                      value={newItem.buy_price}
-                      onChange={(e) => setNewItem({...newItem, buy_price: parseInt(e.target.value)})}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white outline-none focus:border-[#4a6741] transition-all font-outfit"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-[#8c7851] uppercase tracking-widest px-1">Target Sell (Rp)</label>
-                    <input 
-                      required
-                      type="number"
-                      value={newItem.sell_price}
-                      onChange={(e) => setNewItem({...newItem, sell_price: parseInt(e.target.value)})}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white outline-none focus:border-[#4a6741] transition-all font-outfit"
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Buy Price (Rp)</label>
+                  <input required type="number" value={newItem.harga_beli} onChange={(e) => setNewItem({...newItem, harga_beli: parseInt(e.target.value)})} className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-5 text-white outline-none focus:border-cyan-500 transition-all font-outfit text-lg font-black" />
                 </div>
-                <div className="pt-4 flex gap-3">
-                  <button 
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="flex-1 py-3 border border-white/10 text-white rounded-xl text-sm font-bold hover:bg-white/5 transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    type="submit"
-                    className="flex-1 py-3 bg-[#f0ede4] text-[#0d1a15] rounded-xl text-sm font-bold hover:bg-[#4a6741] hover:text-white transition-all"
-                  >
-                    Save Unit
-                  </button>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Target Price (Rp)</label>
+                  <input required type="number" value={newItem.harga_jual} onChange={(e) => setNewItem({...newItem, harga_jual: parseInt(e.target.value)})} className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-5 text-white outline-none focus:border-cyan-500 transition-all font-outfit text-lg font-black" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">IMEI / SN</label>
+                  <input value={newItem.imei} onChange={(e) => setNewItem({...newItem, imei: e.target.value})} placeholder="Optional" className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-5 text-white outline-none focus:border-cyan-500 transition-all font-bold text-sm" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Condition</label>
+                  <select value={newItem.condition} onChange={(e) => setNewItem({...newItem, condition: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-5 text-white outline-none focus:border-cyan-500 transition-all font-bold text-sm appearance-none">
+                    <option value="New">New / BNOB</option>
+                    <option value="Second">Second / Used</option>
+                    <option value="Refurbished">Refurbished</option>
+                  </select>
+                </div>
+                <div className="md:col-span-2 pt-6 flex gap-4">
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 glass-panel border-white/10 text-zinc-500 font-black uppercase text-[10px] tracking-widest hover:bg-white/5 transition-all">Abort</button>
+                  <button type="submit" className="flex-1 py-4 bg-cyan-500 text-black font-black uppercase text-[10px] tracking-widest hover:bg-cyan-400 transition-all shadow-lg shadow-cyan-500/20">Authorize Entry</button>
                 </div>
               </form>
             </motion.div>
@@ -310,4 +284,3 @@ const InventoryPage = () => {
 };
 
 export default InventoryPage;
-

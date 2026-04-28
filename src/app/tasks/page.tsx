@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Clock, CheckCircle2, Circle, AlertCircle, Plus, Calendar, Filter, ArrowLeft, Trash2, Sparkles, List, Layout, Edit2, X } from 'lucide-react';
+import { Clock, CheckCircle2, Circle, AlertCircle, Plus, Calendar, Filter, ArrowLeft, Trash2, Sparkles, List, Layout, Edit2, X, GraduationCap, Zap, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
@@ -12,12 +12,12 @@ const TasksPage = () => {
   const [view, setView] = useState<'list' | 'board'>('list');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<any>(null);
-  const [formData, setFormData] = useState({ title: '', matkul: '', deadline: '' });
+  const [formData, setFormData] = useState({ title: '', category: '', deadline: '', priority: 'Medium' });
 
   const fetchTasks = async () => {
     setLoading(true);
     const { data, error } = await supabase
-      .from('tasks')
+      .from('task_management')
       .select('*')
       .order('deadline', { ascending: true });
     
@@ -29,24 +29,24 @@ const TasksPage = () => {
     fetchTasks();
   }, []);
 
-  const toggleTask = async (id: number, currentStatus: string) => {
-    const newStatus = currentStatus === 'completed' ? 'pending' : 'completed';
-    const { error } = await supabase.from('tasks').update({ status: newStatus }).eq('id', id);
+  const toggleTask = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'Completed' ? 'Pending' : 'Completed';
+    const { error } = await supabase.from('task_management').update({ status_lab: newStatus }).eq('id', id);
     if (!error) {
-      setTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
+      setTasks(prev => prev.map(t => t.id === id ? { ...t, status_lab: newStatus } : t));
     }
   };
 
-  const deleteTask = async (id: number) => {
-    if (confirm('Hapus deadline ini permanen?')) {
-      await supabase.from('tasks').delete().eq('id', id);
+  const deleteTask = async (id: string) => {
+    if (confirm('Authorize deletion of this data entry?')) {
+      await supabase.from('task_management').delete().eq('id', id);
       setTasks(prev => prev.filter(t => t.id !== id));
     }
   };
 
   const openAddModal = () => {
     setEditingTask(null);
-    setFormData({ title: '', matkul: '', deadline: '' });
+    setFormData({ title: '', category: 'Kuliah', deadline: '', priority: 'Medium' });
     setIsModalOpen(true);
   };
 
@@ -59,12 +59,17 @@ const TasksPage = () => {
       const localISOTime = (new Date(d.getTime() - offset)).toISOString().slice(0, 16);
       formattedDeadline = localISOTime;
     }
-    setFormData({ title: task.title, matkul: task.matkul || '', deadline: formattedDeadline });
+    setFormData({ 
+      title: task.title, 
+      category: task.category || 'Kuliah', 
+      deadline: formattedDeadline,
+      priority: task.priority || 'Medium'
+    });
     setIsModalOpen(true);
   };
 
   const saveTask = async () => {
-    if (!formData.title.trim()) return alert('Judul tugas harus diisi');
+    if (!formData.title.trim()) return alert('Title entry required.');
     
     let isoDeadline = null;
     if (formData.deadline) {
@@ -73,16 +78,18 @@ const TasksPage = () => {
 
     const payload = {
       title: formData.title,
-      matkul: formData.matkul,
+      category: formData.category,
       deadline: isoDeadline,
-      status: editingTask ? editingTask.status : 'pending'
+      priority: formData.priority,
+      status_lab: editingTask ? editingTask.status_lab : 'Pending',
+      nim: '21110xxx'
     };
 
     if (editingTask) {
-      const { data, error } = await supabase.from('tasks').update(payload).eq('id', editingTask.id).select();
+      const { data, error } = await supabase.from('task_management').update(payload).eq('id', editingTask.id).select();
       if (data) setTasks(prev => prev.map(t => t.id === editingTask.id ? data[0] : t));
     } else {
-      const { data, error } = await supabase.from('tasks').insert([payload]).select();
+      const { data, error } = await supabase.from('task_management').insert([payload]).select();
       if (data) setTasks(prev => [...prev, data[0]].sort((a,b) => {
         if (!a.deadline) return 1;
         if (!b.deadline) return -1;
@@ -92,184 +99,156 @@ const TasksPage = () => {
     setIsModalOpen(false);
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: { opacity: 1, transition: { staggerChildren: 0.05 } }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 15 },
+    show: { opacity: 1, y: 0 }
+  };
 
   return (
-    <div className="space-y-8 pb-20">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div className="space-y-1">
-          <Link href="/" className="inline-flex items-center gap-2 text-[#8c7851] text-xs font-bold uppercase tracking-widest mb-4 hover:text-[#f0ede4] transition-colors">
-            <ArrowLeft size={14} /> Back to Dashboard
+    <motion.div 
+      variants={containerVariants} initial="hidden" animate="show"
+      className="space-y-8 pb-20 industrial-grid min-h-screen"
+    >
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-4">
+        <div className="space-y-2">
+          <Link href="/" className="inline-flex items-center gap-2 text-zinc-600 text-[10px] font-black uppercase tracking-[0.2em] mb-4 hover:text-white transition-all">
+            <ArrowLeft size={14} /> Back to Hub
           </Link>
-          <div className="flex items-center gap-2 text-[#8c7851] text-[10px] font-bold uppercase tracking-[0.3em]">
-            <Clock size={12} className="text-[#6b4e3d]" />
-            <span>Neural Schedule</span>
+          <div className="flex items-center gap-2 text-amber-500 text-[10px] font-black uppercase tracking-[0.4em]">
+            <GraduationCap size={14} className="animate-pulse" />
+            <span>Academic Pipeline</span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-black text-[#f0ede4] font-outfit tracking-tight">Deadlines & Tasks</h1>
+          <h1 className="text-4xl md:text-6xl font-black text-white font-outfit tracking-tighter uppercase">Task <span className="text-gradient-gold">Matrix</span></h1>
         </div>
         
         <div className="flex items-center gap-3">
-          <button
-            onClick={openAddModal}
-            className="flex items-center gap-2 px-4 py-2.5 bg-[#8c7851] text-[#0d1a15] rounded-xl text-sm font-bold hover:bg-[#f0ede4] transition-all"
-          >
-            <Plus size={18} />
-            <span className="hidden sm:inline">New Task</span>
-          </button>
-          <div className="flex bg-[#0d1a15] border border-white/10 rounded-xl p-1">
-            <button 
-              onClick={() => setView('list')}
-              className={`p-2 rounded-lg transition-all ${view === 'list' ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-white'}`}
-            >
-              <List size={16} />
-            </button>
-            <button 
-              onClick={() => setView('board')}
-              className={`p-2 rounded-lg transition-all ${view === 'board' ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-white'}`}
-            >
-              <Layout size={16} />
-            </button>
+          <div className="flex bg-white/5 border border-white/10 rounded-xl p-1">
+            <button onClick={() => setView('list')} className={`p-2 rounded-lg transition-all ${view === 'list' ? 'bg-amber-500 text-black' : 'text-zinc-500 hover:text-white'}`}><List size={18} /></button>
+            <button onClick={() => setView('board')} className={`p-2 rounded-lg transition-all ${view === 'board' ? 'bg-amber-500 text-black' : 'text-zinc-500 hover:text-white'}`}><Layout size={18} /></button>
           </div>
-          <Link 
-            href="/assistant"
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#f0ede4] text-[#0d1a15] rounded-xl text-sm font-bold hover:bg-[#8c7851] hover:text-[#f0ede4] transition-all shadow-xl"
-          >
-            <Sparkles size={18} className="text-orange-500" />
-            <span className="hidden sm:inline">Ask Neural AI</span>
-          </Link>
+          <button onClick={openAddModal} className="flex items-center gap-2 px-6 py-3 bg-amber-500 text-black rounded-xl text-xs font-black uppercase tracking-widest hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/20">
+            <Plus size={18} />
+            <span>New Entry</span>
+          </button>
         </div>
       </header>
 
       {view === 'list' ? (
         <div className="grid gap-4">
-          {tasks.map((task) => (
+          {loading && tasks.length === 0 ? (
+            <div className="text-center py-24 glass-panel border-white/5 animate-pulse">
+              <Activity size={32} className="animate-spin mx-auto text-zinc-800 mb-4" />
+              <p className="text-zinc-700 text-xs font-black uppercase tracking-widest">Syncing with academic DB...</p>
+            </div>
+          ) : tasks.map((task) => (
             <motion.div
-              key={task.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`glass-panel p-5 flex items-center justify-between group ${task.status === 'completed' ? 'opacity-50' : ''}`}
+              key={task.id} variants={itemVariants}
+              className={`glass-panel p-5 flex items-center justify-between group border-l-4 transition-all ${
+                task.status_lab === 'Completed' ? 'opacity-40 border-l-zinc-800' : 
+                task.priority === 'Urgent' ? 'border-l-red-500 bg-red-500/5' : 'border-l-amber-500 bg-amber-500/5'
+              }`}
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-5">
                 <button 
-                  onClick={() => toggleTask(task.id, task.status)}
-                  className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                    task.status === 'completed' ? 'bg-[#4a6741] border-[#4a6741] text-white' : 'border-[#8c7851]/30 text-transparent hover:border-[#8c7851]'
+                  onClick={() => toggleTask(task.id, task.status_lab)}
+                  className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all ${
+                    task.status_lab === 'Completed' ? 'bg-emerald-500 border-emerald-500 text-black' : 'border-white/10 text-transparent hover:border-amber-500'
                   }`}
                 >
-                  <CheckCircle2 size={14} />
+                  <CheckCircle2 size={16} />
                 </button>
-                <div>
-                  <p className={`text-sm font-bold ${task.status === 'completed' ? 'text-zinc-500 line-through' : 'text-[#f0ede4]'}`}>
-                    {task.title}
-                  </p>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className="text-[10px] text-[#8c7851]/60 font-bold uppercase tracking-tighter">{task.matkul}</span>
-                    <span className="w-1 h-1 rounded-full bg-[#1a2e26]" />
-                    <span className="text-[10px] text-[#8c7851]/60 font-bold uppercase tracking-tighter">
-                      {task.deadline ? new Date(task.deadline).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'No Deadline'}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-3">
+                    <p className={`text-base font-black uppercase tracking-tight ${task.status_lab === 'Completed' ? 'text-zinc-500 line-through' : 'text-white'}`}>
+                      {task.title}
+                    </p>
+                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${
+                      task.priority === 'Urgent' ? 'bg-red-500 text-white' : 'bg-white/5 text-zinc-400'
+                    }`}>
+                      {task.priority}
                     </span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-[10px] text-amber-500/60 font-black uppercase tracking-widest">{task.category}</span>
+                    <div className="h-3 w-[1px] bg-zinc-800" />
+                    <div className="flex items-center gap-2 text-zinc-600">
+                      <Clock size={12} />
+                      <span className="text-[10px] font-bold uppercase">
+                        {task.deadline ? new Date(task.deadline).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'NO_LIMIT'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                {task.status !== 'completed' && (
-                  <div className="hidden sm:flex items-center gap-2 text-[#6b4e3d] mr-2">
-                    <AlertCircle size={14} />
-                    <span className="text-[10px] font-bold uppercase tracking-tighter">Due Soon</span>
-                  </div>
-                )}
-                <div className="flex opacity-0 group-hover:opacity-100 transition-all gap-1">
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); openEditModal(task); }}
-                    className="p-2 text-zinc-600 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
-                  >
-                    <Edit2 size={16} />
-                  </button>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
-                    className="p-2 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+              <div className="flex items-center gap-4">
+                <div className="opacity-0 group-hover:opacity-100 flex gap-2 transition-all">
+                  <button onClick={() => openEditModal(task)} className="p-3 text-zinc-700 hover:text-amber-400 hover:bg-amber-500/5 rounded-xl transition-all"><Edit2 size={18} /></button>
+                  <button onClick={() => deleteTask(task.id)} className="p-3 text-zinc-700 hover:text-red-500 hover:bg-red-500/5 rounded-xl transition-all"><Trash2 size={18} /></button>
                 </div>
               </div>
             </motion.div>
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-          {/* TO DO Column */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="px-3 py-1 rounded-md bg-[#8c7851]/20 text-[#8c7851] text-[10px] font-bold uppercase tracking-widest">
-                To Do
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {/* TO DO BOARD */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+                <h3 className="text-[11px] font-black text-white uppercase tracking-[0.3em]">Operational</h3>
               </div>
-              <span className="text-zinc-600 text-xs font-bold">{tasks.filter(t => t.status !== 'completed').length}</span>
+              <span className="text-[10px] font-black text-zinc-700">{tasks.filter(t => t.status_lab !== 'Completed').length}</span>
             </div>
-            {tasks.filter(t => t.status !== 'completed').map((task) => (
+            {tasks.filter(t => t.status_lab !== 'Completed').map((task) => (
               <motion.div
-                key={task.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-[#0b0b0b] border border-white/5 hover:border-[#8c7851]/30 p-4 rounded-xl cursor-pointer group transition-all"
-                onClick={() => toggleTask(task.id, task.status)}
+                key={task.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                className="glass-panel p-5 border-white/5 hover:border-amber-500/30 cursor-pointer group transition-all bg-white/[0.01]"
+                onClick={() => openEditModal(task)}
               >
-                <div className="flex items-start justify-between mb-3">
-                  <span className="text-[10px] text-[#8c7851] font-bold uppercase bg-[#8c7851]/10 px-2 py-0.5 rounded">
-                    {task.matkul}
+                <div className="flex items-start justify-between mb-4">
+                  <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest bg-amber-500/5 px-2 py-1 rounded">
+                    {task.category}
                   </span>
-                  <div className="opacity-0 group-hover:opacity-100 flex gap-2 transition-all">
-                    <button onClick={(e) => { e.stopPropagation(); openEditModal(task); }} className="text-zinc-600 hover:text-blue-400">
-                      <Edit2 size={14} />
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }} className="text-zinc-600 hover:text-red-400">
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
+                  <Zap size={14} className={task.priority === 'Urgent' ? 'text-red-500 animate-bounce' : 'text-zinc-800'} />
                 </div>
-                <h3 className="text-sm font-bold text-white mb-2">{task.title}</h3>
-                {task.deadline && (
-                  <div className="flex items-center gap-2 text-zinc-500 mt-4 pt-3 border-t border-white/5">
+                <h4 className="text-sm font-black text-white uppercase tracking-tight mb-4">{task.title}</h4>
+                <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                  <div className="flex items-center gap-2 text-zinc-600">
                     <Clock size={12} />
-                    <span className="text-[10px] font-medium">
-                      {new Date(task.deadline).toLocaleDateString('id-ID', { month: 'short', day: 'numeric' })}
-                    </span>
+                    <span className="text-[9px] font-bold uppercase">{task.deadline ? new Date(task.deadline).toLocaleDateString('id-ID', { month: 'short', day: 'numeric' }) : 'TBD'}</span>
                   </div>
-                )}
+                  <button onClick={(e) => { e.stopPropagation(); toggleTask(task.id, task.status_lab); }} className="text-[9px] font-black text-zinc-700 hover:text-emerald-500 uppercase tracking-widest">Done</button>
+                </div>
               </motion.div>
             ))}
           </div>
 
-          {/* COMPLETED Column */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="px-3 py-1 rounded-md bg-[#4a6741]/20 text-[#4a6741] text-[10px] font-bold uppercase tracking-widest">
-                Completed
+          {/* COMPLETED BOARD */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-4 opacity-50">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full" />
+                <h3 className="text-[11px] font-black text-zinc-500 uppercase tracking-[0.3em]">Archived</h3>
               </div>
-              <span className="text-zinc-600 text-xs font-bold">{tasks.filter(t => t.status === 'completed').length}</span>
+              <span className="text-[10px] font-black text-zinc-700">{tasks.filter(t => t.status_lab === 'Completed').length}</span>
             </div>
-            {tasks.filter(t => t.status === 'completed').map((task) => (
+            {tasks.filter(t => t.status_lab === 'Completed').map((task) => (
               <motion.div
-                key={task.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-[#0b0b0b]/50 border border-white/5 p-4 rounded-xl cursor-pointer group transition-all opacity-60 hover:opacity-100"
-                onClick={() => toggleTask(task.id, task.status)}
+                key={task.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                className="glass-panel p-5 border-white/5 opacity-40 hover:opacity-100 transition-all bg-white/[0.01]"
               >
-                <div className="flex items-start justify-between mb-3">
-                  <span className="text-[10px] text-zinc-500 font-bold uppercase bg-white/5 px-2 py-0.5 rounded line-through">
-                    {task.matkul}
-                  </span>
-                  <div className="opacity-0 group-hover:opacity-100 flex gap-2 transition-all">
-                    <button onClick={(e) => { e.stopPropagation(); openEditModal(task); }} className="text-zinc-600 hover:text-blue-400">
-                      <Edit2 size={14} />
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }} className="text-zinc-600 hover:text-red-400">
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
+                <h4 className="text-sm font-black text-zinc-500 uppercase tracking-tight line-through mb-4">{task.title}</h4>
+                <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                  <span className="text-[9px] font-black text-zinc-700 uppercase tracking-widest">COMPLETED</span>
+                  <button onClick={() => deleteTask(task.id)} className="text-zinc-800 hover:text-red-500"><Trash2 size={14} /></button>
                 </div>
-                <h3 className="text-sm font-bold text-zinc-500 line-through mb-2">{task.title}</h3>
               </motion.div>
             ))}
           </div>
@@ -279,61 +258,52 @@ const TasksPage = () => {
       {/* CRUD Modal */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
             <motion.div 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setIsModalOpen(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/90 backdrop-blur-sm"
             />
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-md bg-[#0d1a15] border border-white/10 rounded-2xl shadow-2xl p-6"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-xl glass-panel p-10 border-amber-500/20 bg-[#0a0a0b]"
             >
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-lg font-bold text-white font-outfit">{editingTask ? 'Edit Task' : 'New Task'}</h2>
-                <button onClick={() => setIsModalOpen(false)} className="text-zinc-500 hover:text-white"><X size={20}/></button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 block">Title</label>
-                  <input 
-                    type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})}
-                    placeholder="e.g. Belajar Kriptografi"
-                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-[#8c7851] outline-none transition-all"
-                  />
+              <h2 className="text-3xl font-black text-white font-outfit tracking-tighter uppercase mb-8">Data <span className="text-amber-500">Entry</span></h2>
+              <form onSubmit={(e) => { e.preventDefault(); saveTask(); }} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Task Identification</label>
+                  <input required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} placeholder="e.g. OSPF Lab Configuration" className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-5 text-white outline-none focus:border-amber-500 transition-all font-bold uppercase text-sm" />
                 </div>
-                <div>
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 block">Category / Matkul</label>
-                  <input 
-                    type="text" value={formData.matkul} onChange={e => setFormData({...formData, matkul: e.target.value})}
-                    placeholder="e.g. Kuliah"
-                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-[#8c7851] outline-none transition-all"
-                  />
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Pipeline Category</label>
+                  <input value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-5 text-white outline-none focus:border-amber-500 transition-all font-bold text-sm" />
                 </div>
-                <div>
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 block">Deadline</label>
-                  <input 
-                    type="datetime-local" value={formData.deadline} onChange={e => setFormData({...formData, deadline: e.target.value})}
-                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-[#8c7851] outline-none transition-all [color-scheme:dark]"
-                  />
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Priority Protocol</label>
+                  <select value={formData.priority} onChange={e => setFormData({...formData, priority: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-5 text-white outline-none focus:border-amber-500 transition-all font-bold text-sm appearance-none">
+                    <option value="Low">Low Priority</option>
+                    <option value="Medium">Medium Standard</option>
+                    <option value="High">High Priority</option>
+                    <option value="Urgent">CRITICAL_URGENT</option>
+                  </select>
                 </div>
-              </div>
-
-              <div className="mt-8 flex gap-3">
-                <button onClick={() => setIsModalOpen(false)} className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm font-bold transition-all">
-                  Cancel
-                </button>
-                <button onClick={saveTask} className="flex-1 py-3 rounded-xl bg-[#8c7851] hover:bg-[#f0ede4] text-[#0d1a15] text-sm font-bold transition-all">
-                  Save Task
-                </button>
-              </div>
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Termination Point (Deadline)</label>
+                  <input type="datetime-local" value={formData.deadline} onChange={e => setFormData({...formData, deadline: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-5 text-white outline-none focus:border-amber-500 transition-all font-outfit text-sm [color-scheme:dark]" />
+                </div>
+                <div className="md:col-span-2 pt-6 flex gap-4">
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 glass-panel border-white/10 text-zinc-500 font-black uppercase text-[10px] tracking-widest hover:bg-white/5 transition-all">Abort</button>
+                  <button type="submit" className="flex-1 py-4 bg-amber-500 text-black font-black uppercase text-[10px] tracking-widest hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/20">Commit Entry</button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 };
+
+export default TasksPage;
 
 export default TasksPage;
