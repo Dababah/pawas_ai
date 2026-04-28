@@ -1,481 +1,311 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { FileText, Plus, Search, MoreVertical, Hash, List, Type, Image as ImageIcon, Layout, ArrowLeft, Sparkles, Clock, Star, Share2, Trash2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useEditor, EditorContent, FloatingMenu, BubbleMenu } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
+import Image from '@tiptap/extension-image';
+import { Plus, MoreHorizontal, FileText, ChevronRight, Hash, Type, List, CheckSquare, Image as ImageIcon, Sparkles, Trash2, ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { askPawasAI } from '@/lib/gemini';
-import { marked } from 'marked';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const NotesPage = () => {
-  const [activeNote, setActiveNote] = useState<number | null>(null);
-  const [notes, setNotes] = useState<any[]>([]);
+// Helper to debounce auto-save
+function useDebounce(callback: Function, delay: number) {
+  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  return useCallback((...args: any[]) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => callback(...args), delay);
+  }, [callback, delay]);
+}
+
+export default function AppFlowyWorkspace() {
+  const [pages, setPages] = useState<any[]>([]);
+  const [activePage, setActivePage] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('All');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [slashMenu, setSlashMenu] = useState({ show: false, x: 0, y: 0 });
-  
-  const fetchNotes = async () => {
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetchPages();
+  }, []);
+
+  const fetchPages = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('notes').select('*').order('id', { ascending: false });
+    // Fetch from the new 'pages' table
+    const { data, error } = await supabase.from('pages').select('*').order('updated_at', { ascending: false });
     if (data) {
-      setNotes(data);
+      setPages(data);
+    } else {
+      console.error(error);
     }
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchNotes();
-  }, []);
-
-  const tabs = ['All', 'Kuliah', 'Bisnis', 'Trading', 'Personal'];
-  const filteredNotes = activeTab === 'All' ? notes : notes.filter(n => n.category?.toLowerCase() === activeTab.toLowerCase());
-
-  const addNewNote = async () => {
-    const newNote = {
-      title: 'Untitled Note',
-      icon: '📝',
-      category: activeTab === 'All' ? 'Personal' : activeTab,
-      content: 'Start writing your neural notes here...'
+  const createNewPage = async () => {
+    const { data: userData } = await supabase.auth.getUser();
+    const newPage = {
+      title: '',
+      icon: '📄',
+      user_id: userData?.user?.id || null, // Will use authenticated user if RLS is on
     };
-    const { data, error } = await supabase.from('notes').insert([newNote]).select();
-    if (data) {
-      setNotes([data[0], ...notes]);
-      setActiveNote(data[0].id);
-    } else {
-      const mockId = Date.now();
-      setNotes([{ id: mockId, ...newNote }, ...notes]);
-      setActiveNote(mockId);
-    }
-  };
-
-  const handleEditorCommand = (command: string, value?: string) => {
-    document.execCommand(command, false, value);
-    if (slashMenu.show) setSlashMenu({ ...slashMenu, show: false });
-  };
-
-  const handleEditorKeyUp = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === '/') {
-      const selection = window.getSelection();
-      if (selection && selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
-        setSlashMenu({
-          show: true,
-          x: rect.left,
-          y: rect.bottom
-        });
-      }
-    } else if (e.key === 'Escape' || e.key === 'Backspace' || e.key === ' ') {
-      if (slashMenu.show) setSlashMenu({ ...slashMenu, show: false });
-    }
-  };
-
-  const executeSlashCommand = (cmd: string, val?: string) => {
-    document.execCommand('delete', false); // delete the '/'
-    if (cmd === 'formatBlock') {
-      document.execCommand('formatBlock', false, val);
-    } else if (cmd === 'insertHTML') {
-      document.execCommand('insertHTML', false, val);
-    } else if (cmd === 'insertUnorderedList') {
-      document.execCommand('insertUnorderedList', false);
-    } else if (cmd === 'bold') {
-      document.execCommand('bold', false);
-    }
-    setSlashMenu({ ...slashMenu, show: false });
-  };
-
-  const handleImageUpload = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = (e: any) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          handleEditorCommand('insertImage', event.target?.result as string);
-        };
-        reader.readAsDataURL(file);
-      }
-    };
-    input.click();
-  };
-
-  const deleteNote = async (id: number) => {
-    if (confirm('Hapus catatan ini secara permanen?')) {
-      await supabase.from('notes').delete().eq('id', id);
-      setNotes(prev => prev.filter(n => n.id !== id));
-      setActiveNote(null);
-    }
-  };
-
-  const updateNote = async (id: number, updates: any) => {
-    setNotes(prev => prev.map(n => n.id === id ? { ...n, ...updates } : n));
-    await supabase.from('notes').update(updates).eq('id', id);
-  };
-
-  const shareNote = () => {
-    const note = notes.find(n => n.id === activeNote);
-    if (!note) return;
     
-    if (navigator.share) {
-      navigator.share({
-        title: note.title,
-        text: note.content.replace(/<[^>]*>/g, ''),
-        url: window.location.href,
-      }).catch(console.error);
+    // Fallback if auth isn't strict yet
+    const { data, error } = await supabase.from('pages').insert([newPage]).select();
+    if (data && data[0]) {
+      setPages([data[0], ...pages]);
+      openPage(data[0]);
     } else {
-      navigator.clipboard.writeText(`${note.title}\n\n${note.content.replace(/<[^>]*>/g, '')}`);
-      alert('Konten catatan telah disalin ke clipboard.');
+      console.error("Failed to create page:", error);
+      // Mock for UI preview if DB fails due to RLS
+      const mockPage = { id: Date.now().toString(), title: '', icon: '📄', content: null };
+      setPages([mockPage, ...pages]);
+      openPage(mockPage);
     }
   };
 
-  const generateNoteContent = async () => {
-    if (!aiPrompt.trim() || !activeNote) return;
-    setIsGenerating(true);
-    try {
-      const response = await askPawasAI(`Tolong buatkan materi/catatan untuk topik: "${aiPrompt}". Gunakan Markdown (tabel, list, bold, dsb) secara ekstensif dan terstruktur.`);
-      
-      const note = notes.find(n => n.id === activeNote);
-      if (!note) return;
-      
-      const cleanResponse = response.replace(/```markdown|```html|```/gi, '');
-      const htmlResponse = await marked.parse(cleanResponse); // Compile Markdown to raw HTML for contentEditable
-      
-      const existingContent = note.content === 'Start writing your neural notes here...' ? '' : note.content + '<br/><br/>';
-      const newContent = `${existingContent}<h3>✨ AI Generated: ${aiPrompt}</h3><br/>${htmlResponse}`;
-      
-      updateNote(activeNote, { content: newContent });
-      setAiPrompt('');
-    } catch (error) {
-      alert('Koneksi Neural gagal. Silakan coba lagi.');
-    } finally {
-      setIsGenerating(false);
+  const openPage = async (page: any) => {
+    setLoading(true);
+    // Fetch blocks for this page
+    const { data: blocks } = await supabase.from('blocks').select('*').eq('page_id', page.id).order('position_index', { ascending: true });
+    
+    let contentHtml = '';
+    if (blocks && blocks.length > 0) {
+      // Reconstruct HTML from blocks if stored that way, or we can just store the full JSON in the first block for simplicity
+      // To mimic AppFlowy reliably, let's assume the entire document JSON is stored in the 'content' of a single block for now, 
+      // or we construct it.
+      if (blocks[0] && blocks[0].content) {
+        contentHtml = typeof blocks[0].content === 'string' ? blocks[0].content : JSON.stringify(blocks[0].content);
+      }
+    }
+    
+    setActivePage({ ...page, content: contentHtml });
+    setLoading(false);
+  };
+
+  const deletePage = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm('Delete this page permanently?')) {
+      await supabase.from('pages').delete().eq('id', id);
+      setPages(pages.filter(p => p.id !== id));
+      if (activePage?.id === id) setActivePage(null);
     }
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: { staggerChildren: 0.05 }
-    }
+  const updatePageTitle = async (title: string) => {
+    if (!activePage) return;
+    setActivePage({ ...activePage, title });
+    setPages(pages.map(p => p.id === activePage.id ? { ...p, title } : p));
+    await supabase.from('pages').update({ title, updated_at: new Date().toISOString() }).eq('id', activePage.id);
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 10 },
-    show: { opacity: 1, y: 0 }
+  const saveContent = async (htmlContent: string, jsonContent: any) => {
+    if (!activePage) return;
+    setSaving(true);
+    
+    // In a true block editor, we'd sync individual rows to `blocks`. 
+    // For this AppFlowy clone, we will serialize the document into the `blocks` table as a single root block to ensure perfect state retention,
+    // or store it in `pages` if we added a column. Since we only have `blocks`, we'll upsert block index 0.
+    
+    const { data: existingBlocks } = await supabase.from('blocks').select('id').eq('page_id', activePage.id).eq('position_index', 0);
+    
+    const blockData = {
+      page_id: activePage.id,
+      type: 'document',
+      content: jsonContent, // Storing TipTap JSON directly in JSONB
+      position_index: 0
+    };
+
+    if (existingBlocks && existingBlocks.length > 0) {
+      await supabase.from('blocks').update(blockData).eq('id', existingBlocks[0].id);
+    } else {
+      await supabase.from('blocks').insert([blockData]);
+    }
+    
+    await supabase.from('pages').update({ updated_at: new Date().toISOString() }).eq('id', activePage.id);
+    setSaving(false);
   };
+
+  const debouncedSave = useDebounce(saveContent, 1000);
 
   return (
-    <div className="min-h-screen">
-      <AnimatePresence mode="wait">
-        {!activeNote ? (
-          <motion.div 
-            key="list"
-            variants={containerVariants}
-            initial="hidden"
-            animate="show"
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-8 pb-20"
-          >
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 text-zinc-500 text-[10px] font-bold uppercase tracking-[0.3em]">
-                  <Sparkles size={12} className="text-purple-500" />
-                  <span>Neural Workspace</span>
-                </div>
-                <h1 className="text-3xl md:text-4xl font-black text-white font-outfit">Knowledge Base</h1>
-              </div>
-              
-              <button 
-                onClick={addNewNote}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#f0ede4] text-[#0d1a15] rounded-xl text-sm font-bold hover:bg-[#8c7851] hover:text-[#f0ede4] transition-all shadow-lg shadow-white/5 group"
-              >
-                <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" />
-                <span>New Page</span>
-              </button>
-            </header>
-
-            <div className="flex flex-col gap-4">
-              <motion.div variants={itemVariants} className="relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-[#8c7851] transition-colors" size={18} />
-                <input 
-                  type="text" 
-                  placeholder="Search your neural network..."
-                  className="w-full bg-zinc-950/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-[#8c7851]/50 focus:bg-[#8c7851]/5 transition-all placeholder:text-zinc-700"
-                />
-              </motion.div>
-
-              <motion.div variants={itemVariants} className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
-                {tabs.map(tab => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all ${
-                      activeTab === tab 
-                        ? 'bg-[#8c7851] text-[#f0ede4] shadow-lg shadow-[#8c7851]/20' 
-                        : 'bg-white/5 text-zinc-500 hover:bg-white/10 hover:text-zinc-300'
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </motion.div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <section className="space-y-4">
-                <div className="flex items-center justify-between px-1">
-                  <h2 className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">Quick Access</h2>
-                  <Star size={12} className="text-zinc-800" />
-                </div>
-                <div className="grid gap-3">
-                  {filteredNotes.length === 0 ? (
-                    <div className="text-center py-12 bg-white/5 rounded-2xl border border-dashed border-white/10">
-                      <p className="text-zinc-500 text-sm font-medium">No notes found in '{activeTab}'.</p>
-                    </div>
-                  ) : (
-                    filteredNotes.map((note) => (
-                      <motion.button
-                        key={note.id}
-                        variants={itemVariants}
-                        onClick={() => setActiveNote(note.id)}
-                        className="w-full glass-panel p-5 flex items-center justify-between group hover:border-[#8c7851]/30 transition-all"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform group-hover:bg-[#8c7851]/10">
-                            {note.icon}
-                          </div>
-                          <div className="text-left">
-                            <p className="text-sm font-bold text-zinc-100 group-hover:text-white transition-colors">{note.title}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-[10px] text-[#8c7851] font-bold uppercase tracking-tighter bg-[#8c7851]/10 px-2 py-0.5 rounded-full">{note.category}</span>
-                              <span className="w-1 h-1 rounded-full bg-zinc-800" />
-                              <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-tighter">Saved in Neural Base</span>
-                            </div>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteNote(note.id);
-                          }}
-                          className="p-2 text-zinc-800 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </motion.button>
-                    ))
-                  )}
-                </div>
-              </section>
-
-              <section className="space-y-6">
-                <div className="flex items-center justify-between px-1">
-                  <h2 className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">Neural Systems</h2>
-                  <Layout size={12} className="text-zinc-800" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  {[
-                    { label: 'New Database', icon: <Layout className="text-blue-500" />, sub: 'Structured data', cmd: () => alert('Database Neural sedang diinisialisasi...') },
-                    { label: 'Templates', icon: <List className="text-purple-500" />, sub: 'Efficiency nodes', cmd: () => alert('Memuat template profesional...') },
-                    { label: 'Cloud Sync', icon: <Clock className="text-emerald-500" />, sub: 'Real-time backup', cmd: () => alert('Sinkronisasi awan aktif.') },
-                    { label: 'Neural AI', icon: <Sparkles className="text-orange-500" />, sub: 'Auto completion', cmd: () => window.location.href = '/assistant' },
-                  ].map((sys, idx) => (
-                    <motion.div 
-                      key={idx} 
-                      variants={itemVariants} 
-                      onClick={sys.cmd}
-                      className="p-5 glass-panel group hover:bg-white/[0.02] cursor-pointer transition-all"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                        {sys.icon}
-                      </div>
-                      <p className="text-xs font-bold text-white mb-1">{sys.label}</p>
-                      <p className="text-[10px] text-zinc-600 font-medium">{sys.sub}</p>
-                    </motion.div>
-                  ))}
-                </div>
-              </section>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div 
-            key="detail"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="flex flex-col h-[calc(100vh-120px)] md:h-[calc(100vh-80px)]"
-          >
-            <header className="flex items-center justify-between py-4 border-b border-white/5 mb-10">
-              <button 
-                onClick={() => setActiveNote(null)} 
-                className="text-zinc-500 hover:text-white transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-widest"
-              >
-                <ArrowLeft size={16} /> Back to Library
-              </button>
-              <div className="flex items-center gap-4">
-                <button 
-                  onClick={shareNote}
-                  className="p-2 text-zinc-500 hover:text-white hover:bg-white/5 rounded-lg transition-all"
-                >
-                  <Share2 size={18} />
-                </button>
-                <button 
-                  onClick={() => activeNote && deleteNote(activeNote)}
-                  className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                >
-                  <Trash2 size={18} />
-                </button>
-              </div>
-            </header>
-
-            <div className="flex-1 overflow-y-auto space-y-10 pr-2">
-              <div className="space-y-6">
-                <div className="w-20 h-20 rounded-3xl bg-zinc-900 flex items-center justify-center text-5xl shadow-2xl border border-white/5">
-                  {notes.find(n => n.id === activeNote)?.icon}
-                </div>
-                <h1 
-                  className="text-4xl md:text-6xl font-black text-white tracking-tight outline-none font-outfit" 
-                  contentEditable 
-                  suppressContentEditableWarning
-                  onBlur={(e) => {
-                    const newTitle = e.currentTarget.textContent || '';
-                    updateNote(activeNote, { title: newTitle });
-                  }}
-                >
-                  {notes.find(n => n.id === activeNote)?.title}
-                </h1>
-                
-                <div className="flex flex-wrap gap-4 items-center py-4 border-y border-white/5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-[0.2em]">Category:</span>
-                    <span className="px-3 py-1 bg-white/5 border border-white/5 rounded-full text-[10px] text-zinc-300 font-bold uppercase">
-                      {notes.find(n => n.id === activeNote)?.category}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-[0.2em]">Modified:</span>
-                    <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-tighter">Oct 28, 2026 • 03:15 AM</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* AI Generator Bar */}
-              <div className="bg-[#8c7851]/10 border border-[#8c7851]/20 rounded-2xl p-4 flex flex-col sm:flex-row gap-3 mb-6 items-start sm:items-center shadow-lg transition-all focus-within:border-[#8c7851]/50">
-                <div className="flex items-center gap-3 w-full">
-                  <Sparkles size={20} className="text-[#8c7851] animate-pulse shrink-0" />
-                  <input 
-                    value={aiPrompt}
-                    onChange={(e) => setAiPrompt(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && generateNoteContent()}
-                    placeholder="Command Neural AI to write something..."
-                    className="flex-1 w-full bg-transparent border-none outline-none text-[#f0ede4] placeholder:text-[#8c7851]/40 text-sm font-medium"
-                    disabled={isGenerating}
-                  />
-                  <button 
-                    onClick={generateNoteContent}
-                    disabled={isGenerating || !aiPrompt.trim()}
-                    className="hidden sm:block px-5 py-2.5 bg-[#8c7851] text-[#0d1a15] rounded-xl text-xs font-bold hover:bg-[#f0ede4] transition-all disabled:opacity-50"
-                  >
-                    {isGenerating ? 'Generating...' : 'Generate'}
-                  </button>
-                </div>
-                {/* Mobile Generate Button */}
-                <button 
-                  onClick={generateNoteContent}
-                  disabled={isGenerating || !aiPrompt.trim()}
-                  className="sm:hidden w-full mt-2 px-5 py-2.5 bg-[#8c7851] text-[#0d1a15] rounded-xl text-xs font-bold hover:bg-[#f0ede4] transition-all disabled:opacity-50"
-                >
-                  {isGenerating ? 'Generating...' : 'Generate Neural Content'}
-                </button>
-              </div>
-
+    <div className="flex h-[calc(100vh-8rem)] bg-[#0A0A0A] border border-white/5 rounded-2xl overflow-hidden shadow-2xl font-inter">
+      {/* Inner Sidebar - AppFlowy Style */}
+      <div className={`w-64 bg-[#111111] border-r border-white/5 flex flex-col transition-all ${activePage ? 'hidden md:flex' : 'flex'}`}>
+        <div className="p-4 flex items-center justify-between border-b border-white/5">
+          <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Workspace</span>
+          <button onClick={createNewPage} className="p-1.5 text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+            <Plus size={16} />
+          </button>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+          {loading && pages.length === 0 ? (
+            <div className="flex justify-center p-4"><Loader2 className="animate-spin text-zinc-600" size={20} /></div>
+          ) : pages.length === 0 ? (
+            <div className="text-center p-4 text-xs text-zinc-600">No pages yet. Create one!</div>
+          ) : (
+            pages.map(page => (
               <div 
-                className="text-lg md:text-xl text-zinc-400 leading-relaxed outline-none min-h-[400px] font-medium custom-html-content relative"
-                contentEditable 
-                suppressContentEditableWarning
-                onKeyUp={handleEditorKeyUp}
-                onBlur={(e) => {
-                  const newContent = e.currentTarget.innerHTML;
-                  updateNote(activeNote, { content: newContent });
-                  // Don't hide menu immediately so clicks can register
-                  setTimeout(() => setSlashMenu({ ...slashMenu, show: false }), 200);
-                }}
-                dangerouslySetInnerHTML={{ __html: notes.find(n => n.id === activeNote)?.content || '' }}
-              />
-
-              {slashMenu.show && (
-                <div 
-                  className="fixed z-50 w-64 bg-[#0d1a15] border border-white/10 rounded-xl shadow-2xl overflow-hidden"
-                  style={{ top: slashMenu.y + 10, left: slashMenu.x }}
-                >
-                  <div className="p-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest bg-black/20 border-b border-white/5">
-                    Basic Blocks
-                  </div>
-                  <div className="p-1 max-h-60 overflow-y-auto">
-                    {[
-                      { icon: <Type size={16} />, label: 'Text', sub: 'Just start writing', cmd: () => executeSlashCommand('formatBlock', 'P') },
-                      { icon: <Hash size={16} />, label: 'Heading 1', sub: 'Big section heading', cmd: () => executeSlashCommand('formatBlock', 'H1') },
-                      { icon: <Hash size={16} className="scale-90" />, label: 'Heading 2', sub: 'Medium section heading', cmd: () => executeSlashCommand('formatBlock', 'H2') },
-                      { icon: <Hash size={16} className="scale-75" />, label: 'Heading 3', sub: 'Small section heading', cmd: () => executeSlashCommand('formatBlock', 'H3') },
-                      { icon: <List size={16} />, label: 'Bulleted List', sub: 'Create a simple list', cmd: () => executeSlashCommand('insertUnorderedList') },
-                      { icon: <Layout size={16} />, label: 'Divider', sub: 'Visually divide blocks', cmd: () => executeSlashCommand('insertHTML', '<hr class="my-4 border-white/10"/>') },
-                      { icon: <Sparkles size={16} className="text-purple-500" />, label: 'Ask AI', sub: 'Generate content', cmd: () => { document.execCommand('delete', false); setSlashMenu({...slashMenu, show: false}); const el = document.querySelector('input[placeholder="Command Neural AI to write something..."]') as HTMLInputElement; if(el) el.focus(); } },
-                    ].map((item, idx) => (
-                      <button
-                        key={idx}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          item.cmd();
-                        }}
-                        className="w-full flex items-center gap-3 p-2 hover:bg-white/5 rounded-lg text-left transition-colors"
-                      >
-                        <div className="w-8 h-8 rounded bg-white/5 flex items-center justify-center text-zinc-400">
-                          {item.icon}
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-white">{item.label}</p>
-                          <p className="text-[10px] text-zinc-500">{item.sub}</p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
+                key={page.id} 
+                onClick={() => openPage(page)}
+                className={`group flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all ${activePage?.id === page.id ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-zinc-200'}`}
+              >
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <span className="text-lg leading-none">{page.icon || '📄'}</span>
+                  <span className="text-sm font-medium truncate">{page.title || 'Untitled'}</span>
                 </div>
-              )}
-            </div>
+                <button onClick={(e) => deletePage(page.id, e)} className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 hover:text-red-400 rounded transition-all">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
 
-            <div className="mt-auto py-6 border-t border-white/5 flex items-center justify-between bg-black/50 backdrop-blur-xl">
-              <div className="flex gap-2">
-                {[
-                  { icon: <Type size={20} />, cmd: () => handleEditorCommand('bold'), label: 'Bold' },
-                  { icon: <List size={20} />, cmd: () => handleEditorCommand('insertUnorderedList'), label: 'List' },
-                  { icon: <ImageIcon size={20} />, cmd: handleImageUpload, label: 'Image' },
-                  { icon: <Hash size={20} />, cmd: () => handleEditorCommand('formatBlock', '<h3>'), label: 'Heading' }
-                ].map((tool, idx) => (
-                  <button 
-                    key={idx} 
-                    onClick={tool.cmd}
-                    title={tool.label}
-                    className="p-2.5 text-zinc-600 hover:text-[#f0ede4] hover:bg-white/5 rounded-xl transition-all active:scale-95"
-                  >
-                    {tool.icon}
-                  </button>
-                ))}
+      {/* Editor Main Area */}
+      <div className="flex-1 flex flex-col bg-[#0A0A0A] relative overflow-hidden">
+        {activePage ? (
+          <>
+            <div className="h-14 border-b border-white/5 flex items-center justify-between px-4 sm:px-8 bg-[#0A0A0A]/80 backdrop-blur-md z-10 sticky top-0">
+              <div className="flex items-center gap-2">
+                <button onClick={() => setActivePage(null)} className="md:hidden p-2 text-zinc-400 hover:text-white">
+                  <ArrowLeft size={18} />
+                </button>
+                <div className="text-xs text-zinc-500 font-medium flex items-center gap-2">
+                  <span>Workspace</span> <ChevronRight size={12} /> <span className="text-zinc-300">{activePage.title || 'Untitled'}</span>
+                </div>
               </div>
-              <div className="text-[10px] text-zinc-700 font-bold uppercase tracking-widest">
-                AI Auto-saving enabled
+              <div className="flex items-center gap-4 text-xs text-zinc-500">
+                {saving ? (
+                  <span className="flex items-center gap-2"><Loader2 size={12} className="animate-spin" /> Saving...</span>
+                ) : (
+                  <span className="flex items-center gap-2"><Save size={12} /> Saved to Database</span>
+                )}
+                <button className="p-2 hover:bg-white/10 rounded-lg transition-colors"><MoreHorizontal size={16} /></button>
               </div>
             </div>
-          </motion.div>
+            
+            <div className="flex-1 overflow-y-auto custom-scrollbar relative">
+              <div className="max-w-3xl mx-auto px-6 py-12 md:py-20">
+                {/* Page Icon & Title */}
+                <div className="group relative mb-8">
+                  <div className="text-6xl mb-4 cursor-pointer hover:opacity-80 transition-opacity w-fit relative">
+                    {activePage.icon || '📄'}
+                  </div>
+                  <input
+                    type="text"
+                    value={activePage.title}
+                    onChange={(e) => updatePageTitle(e.target.value)}
+                    placeholder="Untitled"
+                    className="w-full bg-transparent border-none outline-none text-4xl md:text-5xl font-black text-white font-outfit placeholder:text-zinc-700 resize-none"
+                  />
+                </div>
+
+                {/* Tiptap Editor */}
+                <TiptapEditor 
+                  initialContent={activePage.content} 
+                  onChange={(html, json) => debouncedSave(html, json)} 
+                />
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+            <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center mb-6 border border-white/10 shadow-2xl">
+              <FileText size={32} className="text-zinc-600" />
+            </div>
+            <h2 className="text-xl font-bold text-white font-outfit mb-2">Neural Workspace</h2>
+            <p className="text-sm text-zinc-500 max-w-sm mb-8">Create a new page to start documenting your thoughts, algorithms, and business plans in a truly professional environment.</p>
+            <button onClick={createNewPage} className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-xl text-sm font-bold hover:bg-zinc-200 transition-all shadow-xl shadow-white/10">
+              <Plus size={18} /> Create New Page
+            </button>
+          </div>
         )}
-      </AnimatePresence>
+      </div>
     </div>
   );
-};
+}
 
-export default NotesPage;
+// Sub-component for the Editor to keep it clean
+function TiptapEditor({ initialContent, onChange }: { initialContent: any, onChange: (html: string, json: any) => void }) {
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Placeholder.configure({
+        placeholder: "Type '/' for commands",
+        emptyEditorClass: 'is-editor-empty',
+      }),
+      TaskList,
+      TaskItem.configure({ nested: true }),
+      Image,
+    ],
+    content: initialContent && typeof initialContent === 'object' ? initialContent : (initialContent || ''),
+    editorProps: {
+      attributes: {
+        class: 'prose prose-invert prose-p:my-2 prose-p:leading-relaxed prose-headings:my-4 prose-h1:text-3xl prose-h1:font-bold prose-h2:text-2xl prose-h2:font-bold prose-h3:text-xl prose-li:my-1 focus:outline-none min-h-[400px] w-full max-w-none text-zinc-300',
+      },
+    },
+    onUpdate: ({ editor }) => {
+      onChange(editor.getHTML(), editor.getJSON());
+    },
+  });
 
+  if (!editor) return null;
+
+  return (
+    <div className="relative">
+      {/* Floating Menu (appears on empty lines) */}
+      <FloatingMenu editor={editor} tippyOptions={{ duration: 100 }} className="flex gap-1 bg-[#1A1A1A] border border-white/10 p-1 rounded-xl shadow-2xl">
+        <button onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} className="p-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg"><Hash size={16}/></button>
+        <button onClick={() => editor.chain().focus().toggleTaskList().run()} className="p-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg"><CheckSquare size={16}/></button>
+        <button onClick={() => editor.chain().focus().toggleBulletList().run()} className="p-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg"><List size={16}/></button>
+        <div className="w-px h-6 bg-white/10 mx-1 self-center" />
+        <button onClick={() => {
+          const url = window.prompt('Image URL (e.g. https://...)');
+          if (url) editor.chain().focus().setImage({ src: url }).run();
+        }} className="p-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg"><ImageIcon size={16}/></button>
+      </FloatingMenu>
+
+      {/* Bubble Menu (appears on selection) */}
+      <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }} className="flex overflow-hidden bg-[#1A1A1A] border border-white/10 rounded-xl shadow-2xl">
+        <button onClick={() => editor.chain().focus().toggleBold().run()} className={`px-3 py-2 text-sm font-bold hover:bg-white/10 ${editor.isActive('bold') ? 'bg-white/20 text-white' : 'text-zinc-400'}`}>B</button>
+        <button onClick={() => editor.chain().focus().toggleItalic().run()} className={`px-3 py-2 text-sm italic hover:bg-white/10 ${editor.isActive('italic') ? 'bg-white/20 text-white' : 'text-zinc-400'}`}>I</button>
+        <button onClick={() => editor.chain().focus().toggleStrike().run()} className={`px-3 py-2 text-sm line-through hover:bg-white/10 ${editor.isActive('strike') ? 'bg-white/20 text-white' : 'text-zinc-400'}`}>S</button>
+        <div className="w-px bg-white/10" />
+        <button onClick={() => editor.chain().focus().setParagraph().run()} className="px-3 py-2 text-zinc-400 hover:text-white hover:bg-white/10"><Type size={14}/></button>
+        <button onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} className="px-3 py-2 text-zinc-400 hover:text-white hover:bg-white/10 font-bold">H2</button>
+      </BubbleMenu>
+
+      <EditorContent editor={editor} />
+      
+      {/* Tiptap specific styling */}
+      <style dangerouslySetInnerHTML={{__html: `
+        .is-editor-empty:first-child::before {
+          color: #52525b;
+          content: attr(data-placeholder);
+          float: left;
+          height: 0;
+          pointer-events: none;
+        }
+        ul[data-type="taskList"] {
+          list-style: none;
+          padding: 0;
+        }
+        ul[data-type="taskList"] li {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.5rem;
+        }
+        ul[data-type="taskList"] li > label {
+          margin-top: 0.2rem;
+          user-select: none;
+        }
+        ul[data-type="taskList"] li > div {
+          flex: 1;
+        }
+      `}} />
+    </div>
+  );
+}
