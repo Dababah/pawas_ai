@@ -10,7 +10,7 @@ const BottomNav = () => {
 
   const navItems = [
     { icon: <Home size={22} />, label: 'Home', path: '/' },
-    { icon: <FileText size={22} />, label: 'Notes', path: '/notes' },
+    { icon: <FileText size={22} />, label: 'Neural', path: '/notion' },
     { icon: <TrendingUp size={22} />, label: 'Trade', path: '/trading' },
     { icon: <Globe size={22} />, label: 'Web', path: '/web' },
     { icon: <MessageSquare size={22} />, label: 'AI', path: '/assistant' },
