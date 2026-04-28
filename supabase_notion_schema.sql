@@ -1,83 +1,136 @@
--- 1. Pages Table (The "Files/Folders")
+-- ============================================================
+-- PAWAS AI — Complete Supabase Schema
+-- Optimized for AI Agent CRUD operations
+-- ============================================================
+
+-- 1. PAGES (Workspace — Notion-like pages)
 CREATE TABLE IF NOT EXISTS pages (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  title TEXT NOT NULL DEFAULT 'Untitled',
-  icon TEXT,
-  cover TEXT,
-  parent_id UUID REFERENCES pages(id) ON DELETE CASCADE,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  title TEXT DEFAULT '',
+  icon TEXT DEFAULT '📄',
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 2. Blocks Table (The "Notion Canvas Content")
+-- 2. BLOCKS (Content blocks inside pages)
 CREATE TABLE IF NOT EXISTS blocks (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   page_id UUID REFERENCES pages(id) ON DELETE CASCADE,
-  type TEXT NOT NULL, -- 'text', 'image', 'table', 'todo', 'toggle', 'heading'
-  content JSONB NOT NULL DEFAULT '{}',
-  position_index INTEGER NOT NULL, -- For Drag & Drop ordering
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  type TEXT DEFAULT 'document',
+  content JSONB,
+  position_index INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 3. Databases Table (For Business/College Tables)
-CREATE TABLE IF NOT EXISTS databases (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+-- 3. TASKS (Deadline & Task Management)
+CREATE TABLE IF NOT EXISTS tasks (
+  id BIGSERIAL PRIMARY KEY,
   title TEXT NOT NULL,
-  description TEXT,
-  properties JSONB NOT NULL DEFAULT '[]', -- Array of properties: [{name: 'Status', type: 'select', options: ['To Do', 'Done']}]
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  matkul TEXT DEFAULT '',
+  deadline TIMESTAMPTZ,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'completed')),
+  priority TEXT DEFAULT 'normal' CHECK (priority IN ('low', 'normal', 'high', 'urgent')),
+  created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 4. Database Rows (Items inside the database)
-CREATE TABLE IF NOT EXISTS database_rows (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  database_id UUID REFERENCES databases(id) ON DELETE CASCADE,
-  properties_data JSONB NOT NULL DEFAULT '{}', -- Key-value pairs matching database properties
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+-- 4. NOTES (Quick notes — legacy support)
+CREATE TABLE IF NOT EXISTS notes (
+  id BIGSERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  content TEXT DEFAULT '',
+  category TEXT DEFAULT 'Personal',
+  icon TEXT DEFAULT '📝',
+  created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Enable RLS (Row Level Security)
-ALTER TABLE pages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE blocks ENABLE ROW LEVEL SECURITY;
-ALTER TABLE databases ENABLE ROW LEVEL SECURITY;
-ALTER TABLE database_rows ENABLE ROW LEVEL SECURITY;
+-- 5. INVENTORY (Corepawas Gadget Business)
+CREATE TABLE IF NOT EXISTS inventory (
+  id BIGSERIAL PRIMARY KEY,
+  unit TEXT NOT NULL,
+  buy_price BIGINT DEFAULT 0,
+  sell_price BIGINT DEFAULT 0,
+  status TEXT DEFAULT 'ready' CHECK (status IN ('ready', 'sold', 'reserved')),
+  buyer_name TEXT DEFAULT '',
+  sold_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
 
--- Drop Policies if they exist
-DROP POLICY IF EXISTS "Users can manage their own pages" ON pages;
-DROP POLICY IF EXISTS "Users can manage their own blocks" ON blocks;
-DROP POLICY IF EXISTS "Users can manage their own databases" ON databases;
-DROP POLICY IF EXISTS "Users can manage their own database rows" ON database_rows;
+-- 6. TRADES (Trading Journal — XAUUSD & BTCUSD)
+CREATE TABLE IF NOT EXISTS trades (
+  id BIGSERIAL PRIMARY KEY,
+  pair TEXT DEFAULT 'XAUUSD',
+  entry DECIMAL(12,4),
+  exit_price DECIMAL(12,4),
+  result TEXT DEFAULT '',
+  pips DECIMAL(8,2) DEFAULT 0,
+  notes TEXT DEFAULT '',
+  strategy TEXT DEFAULT 'SMC',
+  created_at TIMESTAMPTZ DEFAULT now()
+);
 
--- Create Policies (Only users can see/edit their own data)
-CREATE POLICY "Users can manage their own pages" ON pages FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can manage their own blocks" ON blocks FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can manage their own databases" ON databases FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can manage their own database rows" ON database_rows FOR ALL USING (auth.uid() = user_id);
+-- 7. SCHEDULES (Gym, meetings, events)
+CREATE TABLE IF NOT EXISTS schedules (
+  id BIGSERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  category TEXT DEFAULT 'general',
+  scheduled_at TIMESTAMPTZ NOT NULL,
+  duration_minutes INTEGER DEFAULT 60,
+  recurring TEXT DEFAULT 'none' CHECK (recurring IN ('none', 'daily', 'weekly')),
+  created_at TIMESTAMPTZ DEFAULT now()
+);
 
--- Create a function to update updated_at automatically
-CREATE OR REPLACE FUNCTION update_modified_column()
+-- ============================================================
+-- INDEXES for fast AI queries
+-- ============================================================
+CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+CREATE INDEX IF NOT EXISTS idx_tasks_deadline ON tasks(deadline);
+CREATE INDEX IF NOT EXISTS idx_inventory_status ON inventory(status);
+CREATE INDEX IF NOT EXISTS idx_trades_pair ON trades(pair);
+CREATE INDEX IF NOT EXISTS idx_pages_updated ON pages(updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_blocks_page ON blocks(page_id);
+CREATE INDEX IF NOT EXISTS idx_schedules_date ON schedules(scheduled_at);
+
+-- ============================================================
+-- AUTO-UPDATE updated_at on pages
+-- ============================================================
+CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
+  NEW.updated_at = now();
+  RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE plpgsql;
 
--- Drop triggers if they exist
-DROP TRIGGER IF EXISTS update_pages_modtime ON pages;
-DROP TRIGGER IF EXISTS update_blocks_modtime ON blocks;
-DROP TRIGGER IF EXISTS update_databases_modtime ON databases;
-DROP TRIGGER IF EXISTS update_database_rows_modtime ON database_rows;
+DROP TRIGGER IF EXISTS pages_updated_at ON pages;
+CREATE TRIGGER pages_updated_at
+  BEFORE UPDATE ON pages
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at();
 
--- Add triggers for updated_at
-CREATE TRIGGER update_pages_modtime BEFORE UPDATE ON pages FOR EACH ROW EXECUTE PROCEDURE update_modified_column();
-CREATE TRIGGER update_blocks_modtime BEFORE UPDATE ON blocks FOR EACH ROW EXECUTE PROCEDURE update_modified_column();
-CREATE TRIGGER update_databases_modtime BEFORE UPDATE ON databases FOR EACH ROW EXECUTE PROCEDURE update_modified_column();
-CREATE TRIGGER update_database_rows_modtime BEFORE UPDATE ON database_rows FOR EACH ROW EXECUTE PROCEDURE update_modified_column();
+-- ============================================================
+-- ROW LEVEL SECURITY (RLS) — Enable for production
+-- ============================================================
+ALTER TABLE pages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE blocks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE inventory ENABLE ROW LEVEL SECURITY;
+ALTER TABLE trades ENABLE ROW LEVEL SECURITY;
+ALTER TABLE schedules ENABLE ROW LEVEL SECURITY;
+
+-- Allow all operations for authenticated and anon users (dev mode)
+-- Replace with proper policies for production
+DO $$
+DECLARE
+  t TEXT;
+BEGIN
+  FOR t IN SELECT unnest(ARRAY['pages','blocks','tasks','notes','inventory','trades','schedules'])
+  LOOP
+    EXECUTE format('
+      CREATE POLICY IF NOT EXISTS "Allow all for %s" ON %s
+        FOR ALL USING (true) WITH CHECK (true);
+    ', t, t);
+  END LOOP;
+END;
+$$;
