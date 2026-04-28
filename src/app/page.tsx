@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { BookOpen, TrendingUp, Clock, ArrowUpRight, Sparkles, Zap, Activity, Package, GraduationCap, Dumbbell, Command, AlertTriangle, CheckCircle2, DollarSign, ListTodo } from 'lucide-react';
+import { BookOpen, TrendingUp, Clock, ArrowUpRight, Sparkles, Zap, Activity, Package, GraduationCap, Dumbbell, Command, AlertTriangle, CheckCircle2, DollarSign, ListTodo, Plus, Settings, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
